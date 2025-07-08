@@ -10,7 +10,6 @@
   "preview": "vite preview",
   "start": "vite preview --host --port $PORT"
 }
-  },
   "dependencies": {
     "@react-leaflet/core": "^3.0.0",
     "axios": "^1.10.0",
