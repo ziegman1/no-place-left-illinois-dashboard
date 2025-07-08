@@ -17,7 +17,7 @@ function MapDashboard() {
   useEffect(() => {
     async function fetchTracts() {
       try {
-        const res = await axios.get("/src/data/fixed_tracts.geojson");
+        const res = await axios.get("/fixed_tracts.geojson");
         // Map: { [countyFP]: totalPopulation }
         const popByCounty = {};
         res.data.features.forEach(f => {

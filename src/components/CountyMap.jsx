@@ -21,7 +21,7 @@ function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMa
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await axios.get("/src/data/fixed_illinois_counties.geojson");
+        const res = await axios.get("/fixed_illinois_counties.geojson");
         setCountyData(res.data);
       } catch (err) {
         console.error("Failed to load counties GeoJSON", err);

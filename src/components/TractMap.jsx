@@ -16,7 +16,7 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await axios.get("/src/data/fixed_tracts.geojson");
+        const res = await axios.get("/fixed_tracts.geojson");
         // Filter tracts by county GEOID (assume GEOID or COUNTYFP property)
         const filtered = {
           ...res.data,
