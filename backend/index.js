@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -183,12 +184,35 @@ app.post('/api/request-password-reset', (req, res) => {
       // For now, we'll just return it in the response for testing
       console.log(`Password reset code for ${email}: ${resetCode}`);
       
-      res.json({ 
-        success: true, 
-        message: 'If the email exists, a reset code has been sent.',
-        // Remove this in production - only for testing
-        resetCode: resetCode
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
       });
+
+      async function sendResetEmail(email, code) {
+        await transporter.sendMail({
+          from: process.env.EMAIL_FROM,
+          to: email,
+          subject: "Password Reset Code",
+          text: `Your password reset code is: ${code}`
+        });
+      }
+
+      sendResetEmail(email, resetCode)
+        .then(() => {
+          res.json({ 
+            success: true, 
+            message: 'If the email exists, a reset code has been sent.'
+          });
+        })
+        .catch((err) => {
+          console.error('Failed to send reset email:', err);
+          res.status(500).json({ error: 'Failed to send reset email' });
+        });
     });
   });
 });
