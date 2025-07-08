@@ -7,13 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-<<<<<<< HEAD
     "preview": "vite preview",
     "start": "vite preview --host --port $PORT"
-=======
-    "preview": "vite preview --host --port $PORT || vite preview --host --port %PORT%",
-    "start": "serve -s dist -l $PORT"
->>>>>>> 12aad36 (Fix: allow Render domain in Vite preview.allowedHosts and update scripts)
   },
   "dependencies": {
     "@react-leaflet/core": "^3.0.0",
