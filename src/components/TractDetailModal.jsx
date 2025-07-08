@@ -54,7 +54,8 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
         };
       }
 
-      const response = await axios.post("http://localhost:4000/api/tract/update", updateData, {
+      const API_URL = import.meta.env.VITE_API_URL;
+      const response = await axios.post(`${API_URL}/api/tract/update`, updateData, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
 

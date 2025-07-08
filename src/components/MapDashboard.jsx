@@ -12,6 +12,7 @@ function MapDashboard() {
   const [selectedCounty, setSelectedCounty] = useState(null); // { name, GEOID }
   const [tractPopulationsByCounty, setTractPopulationsByCounty] = useState({});
   const [coordinator, setCoordinator] = useState(null);
+  
 
   // Load tracts and sum populations by county
   useEffect(() => {
@@ -38,7 +39,7 @@ function MapDashboard() {
   const fetchCoordinator = async (isTract, id) => {
     try {
       const endpoint = isTract ? `/api/coordinator/tract/${id}` : `/api/coordinator/county/${id}`;
-      const res = await axios.get(`http://localhost:4000${endpoint}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}${endpoint}`);
       setCoordinator(res.data.coordinator);
     } catch (err) {
       console.error("Failed to fetch coordinator", err);

@@ -9,6 +9,8 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     if (county && isOpen) {
       setCoordinatorName("");
@@ -16,7 +18,7 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
       setError("");
       setSuccess("");
       // Fetch current coordinator
-      axios.get(`http://localhost:4000/api/coordinator/county/${county.countyfp}`)
+      axios.get(`${API_URL}/api/coordinator/county/${county.countyfp}`)
         .then(res => setCurrentCoordinator(res.data.coordinator))
         .catch(() => setCurrentCoordinator(null));
     }
@@ -28,7 +30,7 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
     setError("");
     setSuccess("");
     try {
-      await axios.post("http://localhost:4000/api/county/assign-coordinator", {
+      await axios.post(`${API_URL}/api/county/assign-coordinator`, {
         countyfp: county.countyfp,
         name: coordinatorName,
         email: coordinatorEmail

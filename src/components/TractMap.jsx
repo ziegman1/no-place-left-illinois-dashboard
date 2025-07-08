@@ -12,6 +12,7 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
   const [showTractModal, setShowTractModal] = useState(false);
   const geoJsonLayerRef = useRef();
   const { user } = useAuth();
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     async function fetchData() {
@@ -36,7 +37,7 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
   // Load tract data from backend
   const loadTractData = async (tractId) => {
     try {
-      const res = await axios.get(`http://localhost:4000/api/tract/${tractId}`);
+      const res = await axios.get(`${API_URL}/api/tract/${tractId}`);
       return res.data.tractData;
     } catch (err) {
       console.error("Failed to load tract data", err);
