@@ -57,12 +57,22 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
     } else {
       population = feature.properties.POP2010;
     }
-    const percentFarFromGod = 17.5;
     const discipleCount = tractDiscipleMakers[tractId] || 0;
+    
+    // Calculate people far from God: (population * 0.85) - disciple makers
+    let peopleFarFromGod = 0;
+    let percentFarFromGod = 0;
+    if (population && population > 0) {
+      const initialPeopleFarFromGod = population * 0.85;
+      peopleFarFromGod = Math.max(0, initialPeopleFarFromGod - discipleCount);
+      percentFarFromGod = (peopleFarFromGod / population) * 100;
+    }
+    
     return {
       tractId,
       population,
       percentFarFromGod,
+      peopleFarFromGod: Math.round(peopleFarFromGod),
       simpleChurches: 0,
       legacyChurches: 0,
       discipleMakers: discipleCount,

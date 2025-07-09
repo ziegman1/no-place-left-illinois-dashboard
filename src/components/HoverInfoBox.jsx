@@ -43,6 +43,9 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, coord
         {percentFarFromGod !== undefined && (
           <li><b>% Far from God:</b> {percentFarFromGod.toFixed(1)}%</li>
         )}
+        {info.peopleFarFromGod !== undefined && (
+          <li><b>People Far from God:</b> {info.peopleFarFromGod.toLocaleString()}</li>
+        )}
         <li>
           <b>Coordinator:</b> {coordinator || "Needed"}
         </li>

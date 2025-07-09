@@ -1,0 +1,3 @@
+"preview": "vite preview --host --port $PORT || vite preview --host --port %PORT%",
+"start": "serve -s dist -l $PORT"
+  

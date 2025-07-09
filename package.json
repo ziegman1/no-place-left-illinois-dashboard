@@ -16,6 +16,7 @@
     "classnames": "^2.5.1",
     "d3": "^7.9.0",
     "leaflet": "^1.9.4",
+    "nodemailer": "^7.0.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-leaflet": "^5.0.0"
