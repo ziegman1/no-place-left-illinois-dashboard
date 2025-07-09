@@ -10,6 +10,9 @@ const ILLINOIS_CENTER = [40.0, -89.0];
 const US_ZOOM = 5.5;
 
 function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMakers, stateConfig }) {
+  if (!stateConfig) {
+    return <div>Loading map configuration...</div>;
+  }
   const [countyData, setCountyData] = useState(null);
   const geoJsonLayerRef = useRef();
   const { user } = useAuth();
