@@ -13,6 +13,13 @@ function MapDashboard() {
   const [tractPopulationsByCounty, setTractPopulationsByCounty] = useState({});
   const [coordinator, setCoordinator] = useState(null);
   
+  // Default state config for Illinois
+  const stateConfig = {
+    center: [40.0, -89.0],
+    zoom: 7,
+    countiesFile: "/illinois_counties_with_population.geojson"
+  };
+  
 
   // Load tracts and sum populations by county
   useEffect(() => {
@@ -120,9 +127,21 @@ function MapDashboard() {
           <div style={{ width: "100%", height: "100%", position: "relative" }}>
             <button
               onClick={handleBackToCounties}
-              style={{ position: "absolute", zIndex: 1000, top: 10, left: 10, padding: "0.5rem 1rem", background: "#fff", border: "1px solid #ccc", borderRadius: 4 }}
+              style={{
+                position: "absolute",
+                zIndex: 3000,
+                top: 10,
+                left: 10,
+                padding: "0.5rem 1rem",
+                background: "#fff",
+                color: "#222",
+                border: "1px solid #ccc",
+                borderRadius: 4,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                fontWeight: 600
+              }}
             >
-              ← Back to Counties
+               Back to Counties
             </button>
             <TractMap
               countyGEOID={selectedCounty.GEOID}
@@ -138,6 +157,7 @@ function MapDashboard() {
             onCountyClick={handleCountyClick}
             discipleMakers={discipleMakers}
             setDiscipleMakers={handleDiscipleMakersChange}
+            stateConfig={stateConfig}
           />
         )}
       </div>

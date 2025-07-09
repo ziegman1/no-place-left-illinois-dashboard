@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview --host --port $PORT",
-    "start": "vite preview --host --port $PORT"
+    "start": "serve -s dist -l $PORT || serve -s dist -l %PORT% || serve -s dist -l 3000",
+    "deploy-check": "node deploy-check.js"
   },
   "dependencies": {
     "@react-leaflet/core": "^3.0.0",

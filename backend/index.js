@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -13,6 +14,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the frontend build
+app.use(express.static('../dist'));
 
 // SQLite setup
 const db = new sqlite3.Database('./auth.db');
@@ -451,6 +455,11 @@ function cleanupExpiredCodes() {
 
 // Clean up expired codes every hour
 setInterval(cleanupExpiredCodes, 60 * 60 * 1000);
+
+// Serve the React app for any non-API routes (must be last)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
 
 app.listen(PORT, () => {
   console.log(`Auth server running on port ${PORT}`);
