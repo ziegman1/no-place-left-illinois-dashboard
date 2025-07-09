@@ -153,7 +153,13 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
       click: (e) => {
         if (isTouchDevice) {
           if (lastTappedTract === tractId) {
-            onTractClick(info);
+            // Double tap on mobile - open edit modal if logged in
+            if (user && user.role === "state") {
+              setSelectedTract(info);
+              setShowDetailModal(true);
+            } else {
+              onTractClick(info);
+            }
             setLastTappedTract(null);
             onTractHover(null);
             clearHighlightTract();
@@ -163,8 +169,14 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
             setHighlightTract(tractId);
           }
         } else {
+          // Desktop click - open edit modal if logged in
           setHighlightTract(tractId);
-          onTractClick(info);
+          if (user && user.role === "state") {
+            setSelectedTract(info);
+            setShowDetailModal(true);
+          } else {
+            onTractClick(info);
+          }
         }
       },
     });
@@ -225,8 +237,15 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
         tract={selectedTract}
         isOpen={showDetailModal}
         onClose={() => setShowDetailModal(false)}
-        onCoordinatorAssigned={() => {
-          // Optionally update hover info or state here
+        onDataUpdate={(tractId, updatedData) => {
+          // Update the tract disciple makers when data is changed
+          setTractDiscipleMakers(prev => ({
+            ...prev,
+            [tractId]: updatedData.discipleMakers
+          }));
+          // Close the modal
+          setShowDetailModal(false);
+          setSelectedTract(null);
         }}
       />
     </>

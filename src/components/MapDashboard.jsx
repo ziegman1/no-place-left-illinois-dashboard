@@ -111,7 +111,10 @@ function MapDashboard() {
     );
   };
 
-  const handleTractClick = (info) => {};
+  const handleTractClick = (info) => {
+    // This will be handled by the TractMap component itself
+    // The TractMap will show the modal if user is logged in
+  };
 
   const handleBackToCounties = () => {
     setSelectedCounty(null);
