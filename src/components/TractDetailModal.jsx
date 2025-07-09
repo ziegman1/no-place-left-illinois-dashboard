@@ -153,6 +153,7 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                 color: "#333",
                 backgroundColor: "#fff"
               }}
+              placeholder="Enter number of disciple makers"
               required
             />
           </div>
@@ -175,6 +176,7 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                 color: "#333",
                 backgroundColor: "#fff"
               }}
+              placeholder="Enter number of simple churches"
               required
             />
           </div>
@@ -197,6 +199,7 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                 color: "#333",
                 backgroundColor: "#fff"
               }}
+              placeholder="Enter number of legacy churches"
               required
             />
           </div>
