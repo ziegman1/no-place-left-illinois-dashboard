@@ -102,7 +102,7 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      zIndex: 4000
+      zIndex: 9999
     }}>
       <div style={{
         background: "#fff",
@@ -111,7 +111,10 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
         minWidth: 400,
         maxWidth: 500,
         maxHeight: "90vh",
-        overflowY: "auto"
+        overflowY: "auto",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+        position: "relative",
+        zIndex: 10000
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <h2>Tract Details</h2>
@@ -150,8 +153,12 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                 padding: 8, 
                 border: "1px solid #ddd", 
                 borderRadius: 4,
-                color: "#333",
-                backgroundColor: "#fff"
+                color: "#333 !important",
+                backgroundColor: "#fff !important",
+                fontSize: "14px",
+                lineHeight: "1.5",
+                display: "block",
+                boxSizing: "border-box"
               }}
               required
             />
@@ -172,8 +179,12 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                 padding: 8, 
                 border: "1px solid #ddd", 
                 borderRadius: 4,
-                color: "#333",
-                backgroundColor: "#fff"
+                color: "#333 !important",
+                backgroundColor: "#fff !important",
+                fontSize: "14px",
+                lineHeight: "1.5",
+                display: "block",
+                boxSizing: "border-box"
               }}
               required
             />
@@ -194,8 +205,12 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                 padding: 8, 
                 border: "1px solid #ddd", 
                 borderRadius: 4,
-                color: "#333",
-                backgroundColor: "#fff"
+                color: "#333 !important",
+                backgroundColor: "#fff !important",
+                fontSize: "14px",
+                lineHeight: "1.5",
+                display: "block",
+                boxSizing: "border-box"
               }}
               required
             />
@@ -237,8 +252,12 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                       padding: 8, 
                       border: "1px solid #ddd", 
                       borderRadius: 4,
-                      color: "#333",
-                      backgroundColor: "#fff"
+                      color: "#333 !important",
+                      backgroundColor: "#fff !important",
+                      fontSize: "14px",
+                      lineHeight: "1.5",
+                      display: "block",
+                      boxSizing: "border-box"
                     }}
                     placeholder="Enter coordinator name"
                     required={formData.coordinatorEnabled}
@@ -257,8 +276,12 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                       padding: 8, 
                       border: "1px solid #ddd", 
                       borderRadius: 4,
-                      color: "#333",
-                      backgroundColor: "#fff"
+                      color: "#333 !important",
+                      backgroundColor: "#fff !important",
+                      fontSize: "14px",
+                      lineHeight: "1.5",
+                      display: "block",
+                      boxSizing: "border-box"
                     }}
                     placeholder="Enter coordinator email"
                     required={formData.coordinatorEnabled}
