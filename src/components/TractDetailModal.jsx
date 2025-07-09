@@ -20,9 +20,9 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
   useEffect(() => {
     if (tract && isOpen) {
       setFormData({
-        discipleMakers: tract.discipleMakers || 0,
-        simpleChurches: tract.simpleChurches || 0,
-        legacyChurches: tract.legacyChurches || 0,
+        discipleMakers: tract.discipleMakers || "",
+        simpleChurches: tract.simpleChurches || "",
+        legacyChurches: tract.legacyChurches || "",
         coordinatorEnabled: false,
         coordinatorName: "",
         coordinatorEmail: ""
@@ -41,9 +41,9 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
     try {
       const updateData = {
         tractId: tract.tractId,
-        discipleMakers: formData.discipleMakers,
-        simpleChurches: formData.simpleChurches,
-        legacyChurches: formData.legacyChurches
+        discipleMakers: formData.discipleMakers === "" ? 0 : formData.discipleMakers,
+        simpleChurches: formData.simpleChurches === "" ? 0 : formData.simpleChurches,
+        legacyChurches: formData.legacyChurches === "" ? 0 : formData.legacyChurches
       };
 
       // If coordinator is being assigned, include coordinator data
@@ -64,9 +64,9 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
       // Call the callback to update parent components
       if (onDataUpdate) {
         onDataUpdate(tract.tractId, {
-          discipleMakers: formData.discipleMakers,
-          simpleChurches: formData.simpleChurches,
-          legacyChurches: formData.legacyChurches
+          discipleMakers: formData.discipleMakers === "" ? 0 : formData.discipleMakers,
+          simpleChurches: formData.simpleChurches === "" ? 0 : formData.simpleChurches,
+          legacyChurches: formData.legacyChurches === "" ? 0 : formData.legacyChurches
         });
       }
 
@@ -144,7 +144,7 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
               type="number"
               min={0}
               value={formData.discipleMakers}
-              onChange={(e) => handleInputChange("discipleMakers", parseInt(e.target.value) || 0)}
+              onChange={(e) => handleInputChange("discipleMakers", e.target.value === "" ? "" : parseInt(e.target.value) || 0)}
               style={{ 
                 width: "100%", 
                 padding: 8, 
@@ -167,7 +167,7 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
               type="number"
               min={0}
               value={formData.simpleChurches}
-              onChange={(e) => handleInputChange("simpleChurches", parseInt(e.target.value) || 0)}
+              onChange={(e) => handleInputChange("simpleChurches", e.target.value === "" ? "" : parseInt(e.target.value) || 0)}
               style={{ 
                 width: "100%", 
                 padding: 8, 
@@ -190,7 +190,7 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
               type="number"
               min={0}
               value={formData.legacyChurches}
-              onChange={(e) => handleInputChange("legacyChurches", parseInt(e.target.value) || 0)}
+              onChange={(e) => handleInputChange("legacyChurches", e.target.value === "" ? "" : parseInt(e.target.value) || 0)}
               style={{ 
                 width: "100%", 
                 padding: 8, 
