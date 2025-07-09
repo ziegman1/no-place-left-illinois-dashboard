@@ -145,7 +145,14 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
               min={0}
               value={formData.discipleMakers}
               onChange={(e) => handleInputChange("discipleMakers", parseInt(e.target.value) || 0)}
-              style={{ width: "100%", padding: 8, border: "1px solid #ddd", borderRadius: 4 }}
+              style={{ 
+                width: "100%", 
+                padding: 8, 
+                border: "1px solid #ddd", 
+                borderRadius: 4,
+                color: "#333",
+                backgroundColor: "#fff"
+              }}
               required
             />
           </div>
@@ -160,7 +167,14 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
               min={0}
               value={formData.simpleChurches}
               onChange={(e) => handleInputChange("simpleChurches", parseInt(e.target.value) || 0)}
-              style={{ width: "100%", padding: 8, border: "1px solid #ddd", borderRadius: 4 }}
+              style={{ 
+                width: "100%", 
+                padding: 8, 
+                border: "1px solid #ddd", 
+                borderRadius: 4,
+                color: "#333",
+                backgroundColor: "#fff"
+              }}
               required
             />
           </div>
@@ -175,7 +189,14 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
               min={0}
               value={formData.legacyChurches}
               onChange={(e) => handleInputChange("legacyChurches", parseInt(e.target.value) || 0)}
-              style={{ width: "100%", padding: 8, border: "1px solid #ddd", borderRadius: 4 }}
+              style={{ 
+                width: "100%", 
+                padding: 8, 
+                border: "1px solid #ddd", 
+                borderRadius: 4,
+                color: "#333",
+                backgroundColor: "#fff"
+              }}
               required
             />
           </div>
@@ -211,7 +232,14 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                     type="text"
                     value={formData.coordinatorName}
                     onChange={(e) => handleInputChange("coordinatorName", e.target.value)}
-                    style={{ width: "100%", padding: 8, border: "1px solid #ddd", borderRadius: 4 }}
+                    style={{ 
+                      width: "100%", 
+                      padding: 8, 
+                      border: "1px solid #ddd", 
+                      borderRadius: 4,
+                      color: "#333",
+                      backgroundColor: "#fff"
+                    }}
                     placeholder="Enter coordinator name"
                     required={formData.coordinatorEnabled}
                   />
@@ -224,7 +252,14 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                     type="email"
                     value={formData.coordinatorEmail}
                     onChange={(e) => handleInputChange("coordinatorEmail", e.target.value)}
-                    style={{ width: "100%", padding: 8, border: "1px solid #ddd", borderRadius: 4 }}
+                    style={{ 
+                      width: "100%", 
+                      padding: 8, 
+                      border: "1px solid #ddd", 
+                      borderRadius: 4,
+                      color: "#333",
+                      backgroundColor: "#fff"
+                    }}
                     placeholder="Enter coordinator email"
                     required={formData.coordinatorEnabled}
                   />

@@ -100,7 +100,14 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
               type="text"
               value={coordinatorName}
               onChange={e => setCoordinatorName(e.target.value)}
-              style={{ width: "100%", padding: 8, border: "1px solid #ddd", borderRadius: 4 }}
+              style={{ 
+                width: "100%", 
+                padding: 8, 
+                border: "1px solid #ddd", 
+                borderRadius: 4,
+                color: "#333",
+                backgroundColor: "#fff"
+              }}
               placeholder="Enter coordinator name"
               required
             />
@@ -113,7 +120,14 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
               type="email"
               value={coordinatorEmail}
               onChange={e => setCoordinatorEmail(e.target.value)}
-              style={{ width: "100%", padding: 8, border: "1px solid #ddd", borderRadius: 4 }}
+              style={{ 
+                width: "100%", 
+                padding: 8, 
+                border: "1px solid #ddd", 
+                borderRadius: 4,
+                color: "#333",
+                backgroundColor: "#fff"
+              }}
               placeholder="Enter coordinator email"
               required
             />
