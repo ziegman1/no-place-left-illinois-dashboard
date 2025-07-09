@@ -44,7 +44,9 @@ function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMa
   function getCountyInfo(feature) {
     const name = feature.properties.NAME || feature.properties.name;
     let population;
-    if (feature.properties.POP_2020 !== undefined && feature.properties.POP_2020 !== null) {
+    if (feature.properties.acs5_county_clean_fixed_total_population !== undefined && feature.properties.acs5_county_clean_fixed_total_population !== null) {
+      population = parseInt(feature.properties.acs5_county_clean_fixed_total_population);
+    } else if (feature.properties.POP_2020 !== undefined && feature.properties.POP_2020 !== null) {
       population = feature.properties.POP_2020;
     } else if (feature.properties.population !== undefined && feature.properties.population !== null) {
       population = feature.properties.population;
