@@ -12,6 +12,17 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
     coordinatorName: "",
     coordinatorEmail: ""
   });
+
+  // Add styles to override global dark theme
+  const inputStyles = {
+    width: "100%", 
+    padding: 8, 
+    border: "1px solid #ddd", 
+    borderRadius: 4,
+    color: "#333",
+    backgroundColor: "#fff",
+    fontSize: "14px"
+  };
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -70,6 +81,9 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
         });
       }
 
+      // Notify other components that data has changed
+      window.dispatchEvent(new Event('dataChanged'));
+
       // Close modal after 2 seconds
       setTimeout(() => {
         onClose();
@@ -92,6 +106,18 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
   if (!isOpen || !tract) return null;
 
   return (
+    <>
+      <style>
+        {`
+          .tract-modal input {
+            color: #333 !important;
+            background-color: #fff !important;
+          }
+          .tract-modal input::placeholder {
+            color: #999 !important;
+          }
+        `}
+      </style>
     <div style={{
       position: "fixed",
       top: 0,
@@ -104,7 +130,7 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
       justifyContent: "center",
       zIndex: 4000
     }}>
-      <div style={{
+        <div className="tract-modal" style={{
         background: "#fff",
         padding: 32,
         borderRadius: 8,
@@ -144,16 +170,9 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
               type="number"
               min={0}
               value={formData.discipleMakers}
-              onChange={(e) => handleInputChange("discipleMakers", e.target.value === "" ? "" : parseInt(e.target.value) || 0)}
-              style={{ 
-                width: "100%", 
-                padding: 8, 
-                border: "1px solid #ddd", 
-                borderRadius: 4,
-                color: "#333",
-                backgroundColor: "#fff"
-              }}
-              placeholder="Enter number of disciple makers"
+                onChange={(e) => handleInputChange("discipleMakers", e.target.value === "" ? "" : parseInt(e.target.value) || 0)}
+                style={inputStyles}
+                placeholder="Enter number of disciple makers"
               required
             />
           </div>
@@ -167,16 +186,9 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
               type="number"
               min={0}
               value={formData.simpleChurches}
-              onChange={(e) => handleInputChange("simpleChurches", e.target.value === "" ? "" : parseInt(e.target.value) || 0)}
-              style={{ 
-                width: "100%", 
-                padding: 8, 
-                border: "1px solid #ddd", 
-                borderRadius: 4,
-                color: "#333",
-                backgroundColor: "#fff"
-              }}
-              placeholder="Enter number of simple churches"
+                onChange={(e) => handleInputChange("simpleChurches", e.target.value === "" ? "" : parseInt(e.target.value) || 0)}
+                style={inputStyles}
+                placeholder="Enter number of simple churches"
               required
             />
           </div>
@@ -190,16 +202,9 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
               type="number"
               min={0}
               value={formData.legacyChurches}
-              onChange={(e) => handleInputChange("legacyChurches", e.target.value === "" ? "" : parseInt(e.target.value) || 0)}
-              style={{ 
-                width: "100%", 
-                padding: 8, 
-                border: "1px solid #ddd", 
-                borderRadius: 4,
-                color: "#333",
-                backgroundColor: "#fff"
-              }}
-              placeholder="Enter number of legacy churches"
+                onChange={(e) => handleInputChange("legacyChurches", e.target.value === "" ? "" : parseInt(e.target.value) || 0)}
+                style={inputStyles}
+                placeholder="Enter number of legacy churches"
               required
             />
           </div>
@@ -212,7 +217,8 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
             borderRadius: 4,
             background: "#f9f9f9"
           }}>
-            <div style={{ display: "flex", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ color: "#b00", fontWeight: "bold", marginBottom: 8 }}>TEST STRING - SHOULD BE VISIBLE</div>
+              <div style={{ display: "flex", alignItems: "center", marginBottom: 16, color: "#222" }}>
               <input
                 type="checkbox"
                 id="coordinatorToggle"
@@ -220,7 +226,10 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                 onChange={(e) => handleInputChange("coordinatorEnabled", e.target.checked)}
                 style={{ marginRight: 8 }}
               />
-              <label htmlFor="coordinatorToggle" style={{ fontWeight: "bold", cursor: "pointer" }}>
+                <label
+                  htmlFor="coordinatorToggle"
+                  style={{ fontWeight: "bold", cursor: "pointer" }}
+                >
                 Assign Tract Coordinator
               </label>
             </div>
@@ -235,14 +244,7 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                     type="text"
                     value={formData.coordinatorName}
                     onChange={(e) => handleInputChange("coordinatorName", e.target.value)}
-                    style={{ 
-                      width: "100%", 
-                      padding: 8, 
-                      border: "1px solid #ddd", 
-                      borderRadius: 4,
-                      color: "#333",
-                      backgroundColor: "#fff"
-                    }}
+                      style={inputStyles}
                     placeholder="Enter coordinator name"
                     required={formData.coordinatorEnabled}
                   />
@@ -255,14 +257,7 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
                     type="email"
                     value={formData.coordinatorEmail}
                     onChange={(e) => handleInputChange("coordinatorEmail", e.target.value)}
-                    style={{ 
-                      width: "100%", 
-                      padding: 8, 
-                      border: "1px solid #ddd", 
-                      borderRadius: 4,
-                      color: "#333",
-                      backgroundColor: "#fff"
-                    }}
+                      style={inputStyles}
                     placeholder="Enter coordinator email"
                     required={formData.coordinatorEnabled}
                   />
@@ -321,6 +316,7 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
         </form>
       </div>
     </div>
+    </>
   );
 }
 

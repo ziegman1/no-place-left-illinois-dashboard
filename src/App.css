@@ -9,7 +9,9 @@ html, body, #root, .app-container {
 body, #root {
   min-height: 100vh;
   min-width: 100vw;
-  overflow: hidden;
+  /* Remove overflow: hidden to allow scrolling */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .app-container {
@@ -17,6 +19,13 @@ body, #root {
   width: 100vw;
   display: flex;
   flex-direction: column;
+}
+
+/* Ensure main content area is scrollable if content overflows */
+.app-container > div[style*='flex: 1'] {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  min-height: 0;
 }
 
 .logo {

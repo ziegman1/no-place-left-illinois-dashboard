@@ -6,7 +6,7 @@ import * as d3 from "d3";
 import { useAuth } from "../App";
 import TractDetailModal from "./TractDetailModal";
 
-function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers, setTractDiscipleMakers }) {
+function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers, setTractDiscipleMakers, onDataRefresh }) {
   const [tractData, setTractData] = useState(null);
   const [mapCenter, setMapCenter] = useState([40.0, -89.0]);
   const geoJsonLayerRef = useRef();
@@ -71,7 +71,10 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
   }, [countyGEOID]);
 
   function getTractInfo(feature) {
-    const tractId = feature.properties.GEOID || feature.properties.geoid || feature.properties.TRACTCE || feature.properties.tractce;
+    const tractCe = feature.properties.TRACTCE || feature.properties.tractce;
+    const countyFp = feature.properties.COUNTYFP || feature.properties.countyfp;
+    const stateFp = feature.properties.STATEFP || feature.properties.statefp || "17"; // Illinois
+    const tractId = tractCe; // Use the tract code as is for the map
     const population = feature.properties.POP_2020 || feature.properties.population || feature.properties.POPULATION || feature.properties.POP2010 || 0;
     const discipleCount = tractDiscipleMakers[tractId] || 0;
     let peopleFarFromGod = 0;
@@ -140,13 +143,13 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
     layer.on({
       mouseover: () => {
         if (!isTouchDevice) {
-          onTractHover(info);
+        onTractHover(info);
           setHighlightTract(tractId);
         }
       },
       mouseout: () => {
         if (!isTouchDevice) {
-          onTractHover(null);
+        onTractHover(null);
           clearHighlightTract();
         }
       },
@@ -211,27 +214,27 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
   return (
     <>
       <div style={{ width: "100%", height: "100%", position: "relative" }}>
-        <MapContainer
+      <MapContainer
           center={mapCenter}
           zoom={10}
-          style={{ width: "100%", height: "100%" }}
-          scrollWheelZoom={true}
+        style={{ width: "100%", height: "100%" }}
+        scrollWheelZoom={true}
           doubleClickZoom={false}
           key={`${mapCenter[0]}-${mapCenter[1]}-${countyGEOID}`}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {tractData && (
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {tractData && (
             <GeoJSON
               data={tractData}
               onEachFeature={onEachFeature}
               ref={geoJsonLayerRef}
               key={JSON.stringify(tractData)}
             />
-          )}
-        </MapContainer>
+        )}
+      </MapContainer>
       </div>
       <TractDetailModal
         tract={selectedTract}
@@ -243,6 +246,10 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
             ...prev,
             [tractId]: updatedData.discipleMakers
           }));
+          // Refresh data from backend
+          if (onDataRefresh) {
+            onDataRefresh();
+          }
           // Close the modal
           setShowDetailModal(false);
           setSelectedTract(null);

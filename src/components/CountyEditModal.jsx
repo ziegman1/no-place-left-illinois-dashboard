@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useAuth } from "../App";
 
 function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
+  const { token } = useAuth();
   const [currentCoordinator, setCurrentCoordinator] = useState(null);
   const [coordinatorName, setCoordinatorName] = useState("");
   const [coordinatorEmail, setCoordinatorEmail] = useState("");
@@ -18,9 +20,24 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
       setError("");
       setSuccess("");
       // Fetch current coordinator
-      axios.get(`${API_URL}/api/coordinator/county/${county.countyfp}`)
-        .then(res => setCurrentCoordinator(res.data.coordinator))
-        .catch(() => setCurrentCoordinator(null));
+      if (!token) {
+        console.log("No token available for fetching current coordinator");
+        setCurrentCoordinator(null);
+        return;
+      }
+      
+      console.log("Fetching current coordinator for county:", county.countyfp);
+      axios.get(`${API_URL}/api/coordinator/county/${county.countyfp}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => {
+          console.log("Current coordinator fetched:", res.data);
+          setCurrentCoordinator(res.data.coordinator);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch current coordinator:", err.response?.data || err.message);
+          setCurrentCoordinator(null);
+        });
     }
   }, [county, isOpen]);
 
@@ -29,17 +46,33 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
     setLoading(true);
     setError("");
     setSuccess("");
+    
+    if (!token) {
+      setError("No authentication token found. Please log in again.");
+      setLoading(false);
+      return;
+    }
+    
     try {
-      await axios.post(`${API_URL}/api/county/assign-coordinator`, {
+      console.log("Submitting coordinator assignment with token:", token.substring(0, 20) + "...");
+      const response = await axios.post(`${API_URL}/api/county/assign-coordinator`, {
         countyfp: county.countyfp,
         name: coordinatorName,
         email: coordinatorEmail
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
+      console.log("Assignment successful:", response.data);
       setSuccess("Coordinator assigned and welcome email sent!");
       setCurrentCoordinator(coordinatorEmail);
       if (onCoordinatorAssigned) onCoordinatorAssigned(coordinatorEmail);
+      
+      // Notify other components that data has changed
+      window.dispatchEvent(new Event('dataChanged'));
+      
       setTimeout(() => onClose(), 1500);
     } catch (err) {
+      console.error("Assignment failed:", err.response?.data || err.message);
       setError(err.response?.data?.error || "Failed to assign coordinator");
     } finally {
       setLoading(false);

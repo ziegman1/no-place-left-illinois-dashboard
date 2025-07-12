@@ -12,6 +12,112 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 
+// County FIPS to name mapping
+const COUNTY_FIPS_TO_NAME = {
+  '001': 'Adams',
+  '003': 'Alexander',
+  '005': 'Bond',
+  '007': 'Boone',
+  '009': 'Brown',
+  '011': 'Bureau',
+  '013': 'Calhoun',
+  '015': 'Carroll',
+  '017': 'Cass',
+  '019': 'Champaign',
+  '021': 'Christian',
+  '023': 'Clark',
+  '025': 'Clay',
+  '027': 'Clinton',
+  '029': 'Coles',
+  '031': 'Cook',
+  '033': 'Crawford',
+  '035': 'Cumberland',
+  '037': 'DeKalb',
+  '039': 'De Witt',
+  '041': 'Douglas',
+  '043': 'DuPage',
+  '045': 'Edgar',
+  '047': 'Edwards',
+  '049': 'Effingham',
+  '051': 'Fayette',
+  '053': 'Ford',
+  '055': 'Franklin',
+  '057': 'Fulton',
+  '059': 'Gallatin',
+  '061': 'Greene',
+  '063': 'Grundy',
+  '065': 'Hamilton',
+  '067': 'Hancock',
+  '069': 'Hardin',
+  '071': 'Henderson',
+  '073': 'Henry',
+  '075': 'Iroquois',
+  '077': 'Jackson',
+  '079': 'Jasper',
+  '081': 'Jefferson',
+  '083': 'Jersey',
+  '085': 'Jo Daviess',
+  '087': 'Johnson',
+  '089': 'Kane',
+  '091': 'Kankakee',
+  '093': 'Kendall',
+  '095': 'Knox',
+  '097': 'Lake',
+  '099': 'LaSalle',
+  '101': 'Lawrence',
+  '103': 'Lee',
+  '105': 'Livingston',
+  '107': 'Logan',
+  '109': 'McDonough',
+  '111': 'McHenry',
+  '113': 'McLean',
+  '115': 'Macon',
+  '117': 'Macoupin',
+  '119': 'Madison',
+  '121': 'Marion',
+  '123': 'Marshall',
+  '125': 'Mason',
+  '127': 'Massac',
+  '129': 'Menard',
+  '131': 'Mercer',
+  '133': 'Monroe',
+  '135': 'Montgomery',
+  '137': 'Morgan',
+  '139': 'Moultrie',
+  '141': 'Ogle',
+  '143': 'Peoria',
+  '145': 'Perry',
+  '147': 'Piatt',
+  '149': 'Pike',
+  '151': 'Pope',
+  '153': 'Pulaski',
+  '155': 'Putnam',
+  '157': 'Randolph',
+  '159': 'Richland',
+  '161': 'Rock Island',
+  '163': 'St. Clair',
+  '165': 'Saline',
+  '167': 'Sangamon',
+  '169': 'Schuyler',
+  '171': 'Scott',
+  '173': 'Shelby',
+  '175': 'Stark',
+  '177': 'Stephenson',
+  '179': 'Tazewell',
+  '181': 'Union',
+  '183': 'Vermilion',
+  '185': 'Wabash',
+  '187': 'Warren',
+  '189': 'Washington',
+  '191': 'Wayne',
+  '193': 'White',
+  '195': 'Whiteside',
+  '197': 'Will',
+  '199': 'Williamson',
+  '201': 'Winnebago',
+  '203': 'Woodford'
+};
+
 app.use(cors());
 app.use(express.json());
 
@@ -28,7 +134,9 @@ db.serialize(() => {
     must_reset_password INTEGER DEFAULT 1,
     role TEXT DEFAULT 'coordinator',
     countyfp TEXT,
-    tractid TEXT
+    tractid TEXT,
+    first_name TEXT,
+    last_name TEXT
   )`);
   
   // Password reset codes table
@@ -48,6 +156,16 @@ db.serialize(() => {
     simple_churches INTEGER DEFAULT 0,
     legacy_churches INTEGER DEFAULT 0,
     updated_at DATETIME,
+    updated_by TEXT
+  )`);
+  
+  // County data table
+  db.run(`CREATE TABLE IF NOT EXISTS county_data (
+    county_name TEXT PRIMARY KEY,
+    disciple_makers INTEGER DEFAULT 0,
+    simple_churches INTEGER DEFAULT 0,
+    legacy_churches INTEGER DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_by TEXT
   )`);
   
@@ -71,31 +189,56 @@ function generateResetCode() {
   return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
 }
 
-// Simple email notification function (replace with real email service in production)
-function sendWelcomeEmail(email, name, tractId) {
-  // In production, integrate with SendGrid, AWS SES, or similar
-  console.log('='.repeat(60));
-  console.log('WELCOME EMAIL SENT');
-  console.log('='.repeat(60));
-  console.log(`To: ${email}`);
-  console.log(`Subject: Welcome to #NoPlaceLeft Illinois - Tract Coordinator Assignment`);
-  console.log('');
-  console.log(`Dear ${name},`);
-  console.log('');
-  console.log(`Welcome to the #NoPlaceLeft Illinois project!`);
-  console.log('');
-  console.log(`You have been assigned as the coordinator for census tract ${tractId}.`);
-  console.log('');
-  console.log(`Your login credentials:`);
-  console.log(`Username: ${email}`);
-  console.log(`Password: #NPLIL`);
-  console.log('');
-  console.log(`Please log in at http://localhost:5173 and change your password on first login.`);
-  console.log('');
-  console.log(`Thank you for serving with us!`);
-  console.log('');
-  console.log(`#NoPlaceLeft Illinois Team`);
-  console.log('='.repeat(60));
+// Email notification function using nodemailer
+async function sendWelcomeEmail(email, name, assignmentId, assignmentType = 'tract') {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+
+    let assignmentText;
+    let subjectSuffix;
+    
+    if (assignmentType === 'county') {
+      assignmentText = `county ${assignmentId}`;
+      subjectSuffix = 'County Coordinator Assignment';
+    } else {
+      assignmentText = `census tract ${assignmentId}`;
+      subjectSuffix = 'Tract Coordinator Assignment';
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: `Welcome to #NoPlaceLeft Illinois - ${subjectSuffix}`,
+      text: `Dear ${name},
+
+Welcome to the #NoPlaceLeft Illinois project!
+
+You have been assigned as the coordinator for ${assignmentText}.
+
+Your login credentials:
+Username: ${email}
+Password: #NPLIL
+
+Please log in at http://localhost:5173 and change your password on first login.
+
+Thank you for serving with us!
+
+#NoPlaceLeft Illinois Team`
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Welcome email sent successfully to ${email}`);
+  } catch (error) {
+    console.error('Failed to send welcome email:', error);
+    // Don't throw error to avoid breaking the coordinator assignment
+  }
 }
 
 function requireRole(roles) {
@@ -112,11 +255,63 @@ function requireRole(roles) {
   };
 }
 
+// Add this after requireRole and before other endpoints
+app.get('/api/user-roles', requireRole(['state', 'county', 'tract']), (req, res) => {
+  const email = req.user.email;
+  db.all('SELECT role, countyfp, tractid FROM users WHERE email = ?', [email], (err, rows) => {
+    console.log('USER-ROLES DEBUG:', { email, rows });
+    if (err) return res.status(500).json({ error: 'Database error' });
+    
+    // Process roles to handle multiple assignments within a single user record
+    const roles = [];
+    
+    rows.forEach(row => {
+      // Add the main role
+      roles.push({ role: row.role, countyfp: row.countyfp, tractid: row.tractid });
+      
+      // If user has both county and tract assignments, create separate role entries
+      if (row.role === 'state' && row.countyfp && row.tractid) {
+        // Add county coordinator role
+        roles.push({ role: 'county', countyfp: row.countyfp, tractid: null });
+        // Add tract coordinator role
+        roles.push({ role: 'tract', countyfp: null, tractid: row.tractid });
+      } else if (row.role === 'state' && row.countyfp) {
+        // Add county coordinator role
+        roles.push({ role: 'county', countyfp: row.countyfp, tractid: null });
+      } else if (row.role === 'state' && row.tractid) {
+        // Add tract coordinator role
+        roles.push({ role: 'tract', countyfp: null, tractid: row.tractid });
+      }
+    });
+    
+    // Remove duplicates based on role + countyfp + tractid combination
+    const uniqueRoles = roles.filter((role, index, self) => 
+      index === self.findIndex(r => 
+        r.role === role.role && 
+        r.countyfp === role.countyfp && 
+        r.tractid === role.tractid
+      )
+    );
+    
+    res.json({
+      roles: uniqueRoles
+    });
+  });
+});
+
 // Login endpoint
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
-  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+  db.all('SELECT * FROM users WHERE email = ?', [email], (err, users) => {
+    console.log('LOGIN DEBUG: users found for', email, users);
+    if (!users || users.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
+    // Pick the user with the highest role
+    const roleHierarchy = { 'state': 3, 'county': 2, 'tract': 1 };
+    const user = users.reduce((highest, u) => {
+      if (!highest) return u;
+      return (roleHierarchy[u.role] > roleHierarchy[highest.role]) ? u : highest;
+    }, null);
+    console.log('LOGIN DEBUG: user selected for login', user);
     bcrypt.compare(password, user.password_hash, (err, result) => {
       if (!result) return res.status(401).json({ error: 'Invalid credentials' });
       const token = generateToken(user);
@@ -287,18 +482,28 @@ app.get('/api/me', (req, res) => {
 // Get coordinator for a county
 app.get('/api/coordinator/county/:countyfp', (req, res) => {
   const { countyfp } = req.params;
-  db.get('SELECT email FROM users WHERE countyfp = ? AND role = "county"', [countyfp], (err, coordinator) => {
+  db.get('SELECT email, first_name, last_name FROM users WHERE countyfp = ? AND (role = "county" OR role = "state")', [countyfp], (err, coordinator) => {
     if (err) return res.status(500).json({ error: 'Database error' });
-    res.json({ coordinator: coordinator ? coordinator.email : null });
+    if (coordinator) {
+      const fullName = [coordinator.first_name, coordinator.last_name].filter(Boolean).join(' ');
+      res.json({ coordinator: fullName || coordinator.email });
+    } else {
+      res.json({ coordinator: null });
+    }
   });
 });
 
 // Get coordinator for a tract
 app.get('/api/coordinator/tract/:tractid', (req, res) => {
   const { tractid } = req.params;
-  db.get('SELECT email FROM users WHERE tractid = ? AND role = "tract"', [tractid], (err, coordinator) => {
+  db.get('SELECT email, first_name, last_name FROM users WHERE tractid = ? AND (role = "tract" OR role = "state")', [tractid], (err, coordinator) => {
     if (err) return res.status(500).json({ error: 'Database error' });
-    res.json({ coordinator: coordinator ? coordinator.email : null });
+    if (coordinator) {
+      const fullName = [coordinator.first_name, coordinator.last_name].filter(Boolean).join(' ');
+      res.json({ coordinator: fullName || coordinator.email });
+    } else {
+      res.json({ coordinator: null });
+    }
   });
 });
 
@@ -361,22 +566,60 @@ app.post('/api/tract/update', requireRole(['state', 'county', 'tract']), (req, r
           }
 
           if (existingUser) {
-            // Update existing user's tract assignment
-            db.run('UPDATE users SET tractid = ? WHERE email = ?', [tractId, coordinator.email], function(err) {
+            // For existing users, create a new role assignment instead of updating
+            // This allows multiple role assignments per user
+            db.run('INSERT INTO users (email, password_hash, must_reset_password, role, tractid) VALUES (?, ?, 0, "tract", ?)', 
+              [coordinator.email, existingUser.password_hash, tractId], function(err) {
               if (err) {
-                db.run('ROLLBACK');
-                return res.status(500).json({ error: 'Failed to update coordinator assignment' });
+                // If insert fails (e.g., duplicate), try to update existing tract assignment
+                db.run('UPDATE users SET tractid = ? WHERE email = ? AND role = "tract"', 
+                  [tractId, coordinator.email], function(updateErr) {
+                  if (updateErr) {
+                    db.run('ROLLBACK');
+                    return res.status(500).json({ error: 'Failed to assign coordinator' });
+                  }
+                  
+                  // Send welcome email
+                  sendWelcomeEmail(coordinator.email, coordinator.name, tractId)
+                    .then(() => {
+                      db.run('COMMIT');
+                      res.json({ 
+                        success: true, 
+                        message: 'Tract data updated and coordinator assigned successfully',
+                        coordinatorAssigned: true
+                      });
+                    })
+                    .catch((err) => {
+                      console.error('Failed to send welcome email:', err);
+                      db.run('COMMIT');
+                      res.json({ 
+                        success: true, 
+                        message: 'Tract data updated and coordinator assigned successfully (email failed)',
+                        coordinatorAssigned: true
+                      });
+                    });
+                });
+              } else {
+                // Send welcome email
+                sendWelcomeEmail(coordinator.email, coordinator.name, tractId)
+                  .then(() => {
+                    db.run('COMMIT');
+                    res.json({ 
+                      success: true, 
+                      message: 'Tract data updated and coordinator assigned successfully',
+                      coordinatorAssigned: true
+                    });
+                  })
+                  .catch((err) => {
+                    console.error('Failed to send welcome email:', err);
+                    db.run('COMMIT');
+                    res.json({ 
+                      success: true, 
+                      message: 'Tract data updated and coordinator assigned successfully (email failed)',
+                      coordinatorAssigned: true
+                    });
+                  });
               }
-              
-              // Send welcome email
-              sendWelcomeEmail(coordinator.email, coordinator.name, tractId);
-              
-              db.run('COMMIT');
-              res.json({ 
-                success: true, 
-                message: 'Tract data updated and coordinator assigned successfully',
-                coordinatorAssigned: true
-              });
             });
           } else {
             // Create new coordinator user
@@ -394,14 +637,24 @@ app.post('/api/tract/update', requireRole(['state', 'county', 'tract']), (req, r
                 }
 
                 // Send welcome email
-                sendWelcomeEmail(coordinator.email, coordinator.name, tractId);
-                
-                db.run('COMMIT');
-                res.json({ 
-                  success: true, 
-                  message: 'Tract data updated and new coordinator created successfully',
-                  coordinatorAssigned: true
-                });
+                sendWelcomeEmail(coordinator.email, coordinator.name, tractId)
+                  .then(() => {
+                    db.run('COMMIT');
+                    res.json({ 
+                      success: true, 
+                      message: 'Tract data updated and new coordinator created successfully',
+                      coordinatorAssigned: true
+                    });
+                  })
+                  .catch((err) => {
+                    console.error('Failed to send welcome email:', err);
+                    db.run('COMMIT');
+                    res.json({ 
+                      success: true, 
+                      message: 'Tract data updated and new coordinator created successfully (email failed)',
+                      coordinatorAssigned: true
+                    });
+                  });
               });
             });
           }
@@ -425,26 +678,460 @@ app.post('/api/county/assign-coordinator', requireRole(['state']), (req, res) =>
   if (!countyfp || !name || !email) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
+  
+  // Split name into first and last name
+  const nameParts = name.trim().split(' ');
+  const first_name = nameParts[0] || '';
+  const last_name = nameParts.slice(1).join(' ') || '';
+  
   db.get('SELECT * FROM users WHERE email = ?', [email], (err, existingUser) => {
     if (err) return res.status(500).json({ error: 'Database error' });
     if (existingUser) {
-      // Update existing user's county assignment and role
-      db.run('UPDATE users SET countyfp = ?, role = "county" WHERE email = ?', [countyfp, email], function(err) {
-        if (err) return res.status(500).json({ error: 'Failed to update coordinator assignment' });
-        sendWelcomeEmail(email, name, countyfp);
-        res.json({ success: true, message: 'Coordinator assigned and welcome email sent' });
+      // For existing users, create a new role assignment instead of updating
+      // This allows multiple role assignments per user
+      db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp, first_name, last_name) VALUES (?, ?, 0, "county", ?, ?, ?)', 
+        [email, existingUser.password_hash, countyfp, first_name, last_name], function(err) {
+        if (err) {
+          // If insert fails (e.g., duplicate), try to update existing county assignment
+          db.run('UPDATE users SET countyfp = ?, first_name = ?, last_name = ? WHERE email = ? AND role = "county"', 
+            [countyfp, first_name, last_name, email], function(updateErr) {
+            if (updateErr) return res.status(500).json({ error: 'Failed to assign coordinator' });
+            sendWelcomeEmail(email, name, countyfp, 'county')
+              .then(() => {
+                res.json({ success: true, message: 'Coordinator assigned and welcome email sent' });
+              })
+              .catch((err) => {
+                console.error('Failed to send welcome email:', err);
+                res.json({ success: true, message: 'Coordinator assigned (email failed)' });
+              });
+          });
+        } else {
+          sendWelcomeEmail(email, name, countyfp, 'county')
+            .then(() => {
+              res.json({ success: true, message: 'Coordinator assigned and welcome email sent' });
+            })
+            .catch((err) => {
+              console.error('Failed to send welcome email:', err);
+              res.json({ success: true, message: 'Coordinator assigned (email failed)' });
+            });
+        }
       });
     } else {
       // Create new user
       bcrypt.hash('#NPLIL', 10, (err, hash) => {
         if (err) return res.status(500).json({ error: 'Failed to hash password' });
-        db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp) VALUES (?, ?, 1, "county", ?)', [email, hash, countyfp], function(err) {
+        db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp, first_name, last_name) VALUES (?, ?, 1, "county", ?, ?, ?)', 
+          [email, hash, countyfp, first_name, last_name], function(err) {
           if (err) return res.status(500).json({ error: 'Failed to create coordinator account' });
-          sendWelcomeEmail(email, name, countyfp);
-          res.json({ success: true, message: 'Coordinator assigned and welcome email sent' });
+          sendWelcomeEmail(email, name, countyfp, 'county')
+            .then(() => {
+              res.json({ success: true, message: 'Coordinator assigned and welcome email sent' });
+            })
+            .catch((err) => {
+              console.error('Failed to send welcome email:', err);
+              res.json({ success: true, message: 'Coordinator assigned (email failed)' });
+            });
         });
       });
     }
+  });
+});
+
+// Get hierarchical data based on coordinator role
+app.get('/api/coordinator/data', requireRole(['state', 'county', 'tract']), (req, res) => {
+  const { role, countyfp, tractid } = req.user;
+  
+  if (role === 'state') {
+    // Get coordinators
+    db.all(`
+      SELECT 
+        u.id, u.email, u.role, u.countyfp, u.tractid, u.first_name, u.last_name,
+        CASE 
+          WHEN u.role = 'state' AND u.countyfp IS NOT NULL THEN 'State Coordinator (County Assignment)'
+          WHEN u.role = 'county' THEN 'County Coordinator'
+          WHEN u.role = 'tract' THEN 'Tract Coordinator'
+          ELSE 'Unknown'
+        END as role_display
+      FROM users u 
+      WHERE (u.role IN ('county', 'tract')) OR (u.role = 'state' AND u.countyfp IS NOT NULL)
+      ORDER BY u.role, u.countyfp, u.tractid
+    `, [], (err, coordinators) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      
+      // Add county_name to each coordinator
+      coordinators.forEach(c => {
+        c.county_name = c.countyfp ? COUNTY_FIPS_TO_NAME[c.countyfp] || c.countyfp : '';
+      });
+      
+      // Get tract data
+      db.all('SELECT * FROM tract_data ORDER BY tract_id', [], (err, tractData) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        
+        // Calculate county totals by summing tract data
+        const countyTotals = {};
+        
+        // Initialize all counties with 0 values
+        Object.keys(COUNTY_FIPS_TO_NAME).forEach(countyFips => {
+          countyTotals[countyFips] = {
+            name: COUNTY_FIPS_TO_NAME[countyFips],
+            discipleMakers: 0,
+            simpleChurches: 0,
+            legacyChurches: 0
+          };
+        });
+        
+        // Sum tract data into county totals
+        tractData.forEach(tract => {
+          // Extract county FIPS from tract ID
+          const tractId = tract.tract_id;
+          let countyFips = null;
+          
+          if (tractId.length === 11) {
+            // Full FIPS code: extract county part (positions 3-5)
+            countyFips = tractId.substring(2, 5);
+          } else if (tractId.length === 6) {
+            // Short tract code: need to map to county
+            if (tractId === '000502') {
+              countyFips = '113'; // McLean County
+            } else if (tractId.startsWith('001')) {
+              countyFips = '001'; // Adams County
+            } else if (tractId.startsWith('003')) {
+              countyFips = '003'; // Alexander County
+            }
+            // Add more mappings as needed
+          }
+          
+          if (countyFips && countyTotals[countyFips]) {
+            countyTotals[countyFips].discipleMakers += tract.disciple_makers || 0;
+            countyTotals[countyFips].simpleChurches += tract.simple_churches || 0;
+            countyTotals[countyFips].legacyChurches += tract.legacy_churches || 0;
+          }
+        });
+        
+        // Convert to array format for frontend
+        const counties = Object.values(countyTotals);
+        
+        const tracts = tractData.map(tract => ({
+          tractId: tract.tract_id,
+          discipleMakers: tract.disciple_makers || 0,
+          simpleChurches: tract.simple_churches || 0,
+          legacyChurches: tract.legacy_churches || 0
+        }));
+        
+        res.json({
+          coordinators,
+          tractData,
+          counties,
+          tracts,
+          userRole: role,
+          userScope: 'state'
+        });
+      });
+    });
+  } else if (role === 'county') {
+    // Get coordinators for this county
+    db.all(`
+      SELECT 
+        u.id, u.email, u.role, u.countyfp, u.tractid, u.first_name, u.last_name,
+        'Tract Coordinator' as role_display
+      FROM users u 
+      WHERE u.role = 'tract' AND u.countyfp = ?
+      ORDER BY u.tractid
+    `, [countyfp], (err, coordinators) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      
+      coordinators.forEach(c => {
+        c.county_name = c.countyfp ? COUNTY_FIPS_TO_NAME[c.countyfp] || c.countyfp : '';
+      });
+      
+      // Get tract data for this county
+      db.all('SELECT * FROM tract_data ORDER BY tract_id', [], (err, tractData) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        
+        // Calculate county total by summing tract data for this county
+        const countyName = COUNTY_FIPS_TO_NAME[countyfp];
+        let countyTotal = {
+          name: countyName,
+          discipleMakers: 0,
+          simpleChurches: 0,
+          legacyChurches: 0
+        };
+        
+        // Sum tract data for this county
+        tractData.forEach(tract => {
+          const tractId = tract.tract_id;
+          let tractCountyFips = null;
+          
+          if (tractId.length === 11) {
+            tractCountyFips = tractId.substring(2, 5);
+          } else if (tractId.length === 6) {
+            // Short tract code: need to map to county
+            if (tractId === '000502') {
+              tractCountyFips = '113'; // McLean County
+            } else if (tractId.startsWith('001')) {
+              tractCountyFips = '001'; // Adams County
+            } else if (tractId.startsWith('003')) {
+              tractCountyFips = '003'; // Alexander County
+            }
+            // Add more mappings as needed
+          }
+          
+          if (tractCountyFips === countyfp) {
+            countyTotal.discipleMakers += tract.disciple_makers || 0;
+            countyTotal.simpleChurches += tract.simple_churches || 0;
+            countyTotal.legacyChurches += tract.legacy_churches || 0;
+          }
+        });
+        
+        const counties = [countyTotal];
+        
+        const tracts = tractData.map(tract => ({
+          tractId: tract.tract_id,
+          discipleMakers: tract.disciple_makers || 0,
+          simpleChurches: tract.simple_churches || 0,
+          legacyChurches: tract.legacy_churches || 0
+        }));
+        
+        res.json({
+          coordinators,
+          tractData,
+          counties,
+          tracts,
+          userRole: role,
+          userScope: 'county',
+          userCounty: countyfp
+        });
+      });
+    });
+  } else if (role === 'tract') {
+    // Get tract data for this specific tract
+    db.get('SELECT * FROM tract_data WHERE tract_id = ?', [tractid], (err, tractData) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      
+      // Format data for MapDashboard
+      const tracts = tractData ? [{
+        tractId: tractData.tract_id,
+        discipleMakers: tractData.disciple_makers || 0,
+        simpleChurches: tractData.simple_churches || 0,
+        legacyChurches: tractData.legacy_churches || 0
+      }] : [];
+      
+      res.json({
+        coordinators: [],
+        tractData: tractData ? [tractData] : [],
+        counties: [],
+        tracts,
+        userRole: role,
+        userScope: 'tract',
+        userTract: tractid
+      });
+    });
+  }
+});
+
+// Get all tract data for a specific county
+app.get('/api/county/:countyfp/tracts', requireRole(['state', 'county']), (req, res) => {
+  const { countyfp } = req.params;
+  const { role, countyfp: userCounty } = req.user;
+  
+  // County coordinators can only access their own county
+  if (role === 'county' && countyfp !== userCounty) {
+    return res.status(403).json({ error: 'You can only access data for your assigned county' });
+  }
+  
+  // For now, we'll return all tract data and filter on frontend
+  // In a real implementation, you'd want to store county information with tract data
+  db.all('SELECT * FROM tract_data ORDER BY tract_id', [], (err, tractData) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    
+    res.json({ tractData });
+  });
+});
+
+// Bulk update county data
+app.post('/api/county/bulk-update', requireRole(['state', 'county']), (req, res) => {
+  const { updates } = req.body;
+  const { role, countyfp } = req.user;
+  
+  if (!Array.isArray(updates)) {
+    return res.status(400).json({ error: 'Updates must be an array' });
+  }
+  
+  // Validate permissions for each update
+  for (const update of updates) {
+    if (role === 'county' && update.countyName !== COUNTY_FIPS_TO_NAME[countyfp]) {
+      return res.status(403).json({ error: 'You can only edit data for your assigned county' });
+    }
+  }
+  
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
+    
+    let completed = 0;
+    let errors = [];
+    
+    updates.forEach((update, index) => {
+      const { countyName, discipleMakers, simpleChurches, legacyChurches } = update;
+      
+      // For now, we'll store county data in a simple table
+      // You might want to create a separate counties table
+      db.run(`
+        INSERT OR REPLACE INTO county_data (county_name, disciple_makers, simple_churches, legacy_churches, updated_at, updated_by)
+        VALUES (?, ?, ?, ?, datetime('now'), ?)
+      `, [countyName, discipleMakers || 0, simpleChurches || 0, legacyChurches || 0, req.user.email], function(err) {
+        if (err) {
+          errors.push({ index, countyName, error: err.message });
+        }
+        completed++;
+        
+        if (completed === updates.length) {
+          if (errors.length > 0) {
+            db.run('ROLLBACK');
+            res.status(500).json({ error: 'Some updates failed', errors });
+          } else {
+            db.run('COMMIT');
+            res.json({ success: true, message: 'All updates completed successfully' });
+          }
+        }
+      });
+    });
+  });
+});
+
+// Bulk update tract data
+app.post('/api/tract/bulk-update', requireRole(['state', 'county', 'tract']), (req, res) => {
+  const { updates } = req.body;
+  const { role, countyfp, tractid } = req.user;
+  
+  if (!Array.isArray(updates)) {
+    return res.status(400).json({ error: 'Updates must be an array' });
+  }
+  
+  // Validate permissions for each update
+  for (const update of updates) {
+    if (role === 'tract' && update.tractId !== tractid) {
+      return res.status(403).json({ error: 'You can only edit your assigned tract' });
+    }
+    // Add county validation here if needed
+  }
+  
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
+    
+    let completed = 0;
+    let errors = [];
+    
+    updates.forEach((update, index) => {
+      const { tractId, discipleMakers, simpleChurches, legacyChurches } = update;
+      
+      db.run(`
+        INSERT OR REPLACE INTO tract_data (tract_id, disciple_makers, simple_churches, legacy_churches, updated_at, updated_by)
+        VALUES (?, ?, ?, ?, datetime('now'), ?)
+      `, [tractId, discipleMakers, simpleChurches, legacyChurches, req.user.email], function(err) {
+        if (err) {
+          errors.push({ index, tractId, error: err.message });
+        }
+        completed++;
+        
+        if (completed === updates.length) {
+          if (errors.length > 0) {
+            db.run('ROLLBACK');
+            res.status(500).json({ error: 'Some updates failed', errors });
+          } else {
+            db.run('COMMIT');
+            res.json({ success: true, message: 'All updates completed successfully' });
+          }
+        }
+      });
+    });
+  });
+});
+
+
+
+
+
+// Update coordinator information (name and email)
+app.put('/api/coordinator/:id', requireRole(['state', 'county']), (req, res) => {
+  const { id } = req.params;
+  const { first_name, last_name, email } = req.body;
+  const { role, countyfp } = req.user;
+  
+  // Validate required fields
+  if (!first_name || !last_name || !email) {
+    return res.status(400).json({ error: 'First name, last name, and email are required' });
+  }
+  
+  // Check permissions
+  db.get('SELECT role, countyfp FROM users WHERE id = ?', [id], (err, coordinator) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (!coordinator) return res.status(404).json({ error: 'Coordinator not found' });
+    
+    // State coordinators can edit any coordinator
+    // County coordinators can only edit tract coordinators in their county
+    if (role === 'county' && (coordinator.role !== 'tract' || coordinator.countyfp !== countyfp)) {
+      return res.status(403).json({ error: 'You can only edit tract coordinators in your county' });
+    }
+    
+    // Check if email is already taken by another user
+    db.get('SELECT id FROM users WHERE email = ? AND id != ?', [email, id], (err, existingUser) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      if (existingUser) return res.status(400).json({ error: 'Email is already in use' });
+      
+      // Update coordinator information
+      db.run('UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?', 
+        [first_name, last_name, email, id], function(err) {
+        if (err) return res.status(500).json({ error: 'Failed to update coordinator' });
+        
+        res.json({ 
+          success: true, 
+          message: 'Coordinator updated successfully',
+          coordinator: { id, first_name, last_name, email, role: coordinator.role }
+        });
+      });
+    });
+  });
+});
+
+// Delete coordinator
+app.delete('/api/coordinator/:id', requireRole(['state']), (req, res) => {
+  const { id } = req.params;
+  
+  console.log('Delete request for coordinator ID:', id);
+  
+  // Check if coordinator exists
+  db.get('SELECT role, email FROM users WHERE id = ?', [id], (err, coordinator) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    if (!coordinator) {
+      console.log('Coordinator not found with ID:', id);
+      return res.status(404).json({ error: 'Coordinator not found' });
+    }
+    
+    console.log('Found coordinator:', coordinator);
+    
+    // Only allow deletion of county and tract coordinators (not state coordinators)
+    if (coordinator.role === 'state') {
+      console.log('Attempted to delete state coordinator');
+      return res.status(403).json({ error: 'Cannot delete state coordinators' });
+    }
+    
+    // Delete the coordinator
+    db.run('DELETE FROM users WHERE id = ?', [id], function(err) {
+      if (err) {
+        console.error('Failed to delete coordinator:', err);
+        return res.status(500).json({ error: 'Failed to delete coordinator' });
+      }
+      
+      console.log('Successfully deleted coordinator:', { id, email: coordinator.email, role: coordinator.role });
+      res.json({ 
+        success: true, 
+        message: 'Coordinator deleted successfully',
+        deletedCoordinator: { id, email: coordinator.email, role: coordinator.role }
+      });
+    });
   });
 });
 
@@ -455,6 +1142,10 @@ function cleanupExpiredCodes() {
 
 // Clean up expired codes every hour
 setInterval(cleanupExpiredCodes, 60 * 60 * 1000);
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
 // Serve the React app for any non-API routes (must be last)
 app.get('*', (req, res) => {

@@ -9,7 +9,7 @@ import CountyEditModal from "./CountyEditModal";
 const ILLINOIS_CENTER = [40.0, -89.0];
 const US_ZOOM = 5.5;
 
-function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMakers, stateConfig }) {
+function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMakers, stateConfig, onDataRefresh }) {
   if (!stateConfig) {
     return <div>Loading map configuration...</div>;
   }
@@ -143,13 +143,13 @@ function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMa
     layer.on({
       mouseover: () => {
         if (!isTouchDevice) {
-          onCountyHover(info);
+        onCountyHover(info);
           setHighlightCounty(countyfp);
         }
       },
       mouseout: () => {
         if (!isTouchDevice) {
-          onCountyHover(null);
+        onCountyHover(null);
           clearHighlightCounty();
         }
       },
@@ -201,19 +201,19 @@ function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMa
   return (
     <>
       <div style={{ width: "100%", height: "100%", position: "relative" }}>
-        <MapContainer
+      <MapContainer
           key={`${stateConfig.center[0]}-${stateConfig.center[1]}-${stateConfig.zoom}`}
           center={stateConfig.center}
           zoom={stateConfig.zoom}
-          style={{ width: "100%", height: "100%" }}
-          scrollWheelZoom={true}
-          doubleClickZoom={false}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {countyData && (
+        style={{ width: "100%", height: "100%" }}
+        scrollWheelZoom={true}
+        doubleClickZoom={false}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {countyData && (
             <GeoJSON 
               data={countyData} 
               onEachFeature={onEachFeature} 
@@ -221,15 +221,18 @@ function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMa
               onAdd={() => console.log("GeoJSON layer added with data:", countyData)}
               key={JSON.stringify(countyData)}
             />
-          )}
-        </MapContainer>
+        )}
+      </MapContainer>
       </div>
       <CountyEditModal
         county={selectedCounty}
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         onCoordinatorAssigned={() => {
-          // Optionally update hover info or state here
+          // Refresh data when coordinator is assigned
+          if (onDataRefresh) {
+            onDataRefresh();
+          }
         }}
       />
     </>

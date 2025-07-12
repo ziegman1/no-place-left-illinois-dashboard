@@ -31,6 +31,11 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, coord
   return (
     <div style={{ color: "#222" }}>
       <h2>{!isTract ? name : (countyName ? `${countyName} County` : "Tract Details")}</h2>
+      {user && user.roles && user.roles.length > 0 && (
+        <div style={{ marginBottom: 8 }}>
+          <b>Your Roles:</b> {user.roles.map(r => r.role).join(", ")}
+        </div>
+      )}
       <ul style={{ listStyle: "none", padding: 0 }}>
         {!isTract && (
           <>

@@ -1,7 +1,32 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
 import MapDashboard from "./components/MapDashboard";
+import DataManagementPage from "./components/DataManagementPage";
 import "./App.css";
 import axios from "axios";
+
+const COUNTY_NAMES = {
+  '001': 'Adams', '003': 'Alexander', '005': 'Bond', '007': 'Boone', '009': 'Brown',
+  '011': 'Bureau', '013': 'Calhoun', '015': 'Carroll', '017': 'Cass', '019': 'Champaign',
+  '021': 'Christian', '023': 'Clark', '025': 'Clay', '027': 'Clinton', '029': 'Coles',
+  '031': 'Cook', '033': 'Crawford', '035': 'Cumberland', '037': 'DeKalb', '039': 'De Witt',
+  '041': 'Douglas', '043': 'DuPage', '045': 'Edgar', '047': 'Edwards', '049': 'Effingham',
+  '051': 'Fayette', '053': 'Ford', '055': 'Franklin', '057': 'Fulton', '059': 'Gallatin',
+  '061': 'Greene', '063': 'Grundy', '065': 'Hamilton', '067': 'Hancock', '069': 'Hardin',
+  '071': 'Henderson', '073': 'Henry', '075': 'Iroquois', '077': 'Jackson', '079': 'Jasper',
+  '081': 'Jefferson', '083': 'Jersey', '085': 'Jo Daviess', '087': 'Johnson', '089': 'Kane',
+  '091': 'Kankakee', '093': 'Kendall', '095': 'Knox', '097': 'Lake', '099': 'LaSalle',
+  '101': 'Lawrence', '103': 'Lee', '105': 'Livingston', '107': 'Logan', '109': 'McDonough',
+  '111': 'McHenry', '113': 'McLean', '115': 'Macon', '117': 'Macoupin', '119': 'Madison',
+  '121': 'Marion', '123': 'Marshall', '125': 'Mason', '127': 'Massac', '129': 'Menard',
+  '131': 'Mercer', '133': 'Monroe', '135': 'Montgomery', '137': 'Morgan', '139': 'Moultrie',
+  '141': 'Ogle', '143': 'Peoria', '145': 'Perry', '147': 'Piatt', '149': 'Pike',
+  '151': 'Pope', '153': 'Pulaski', '155': 'Putnam', '157': 'Randolph', '159': 'Richland',
+  '161': 'Rock Island', '163': 'St. Clair', '165': 'Saline', '167': 'Sangamon', '169': 'Schuyler',
+  '171': 'Scott', '173': 'Shelby', '175': 'Stark', '177': 'Stephenson', '179': 'Tazewell',
+  '181': 'Union', '183': 'Vermilion', '185': 'Wabash', '187': 'Warren', '189': 'Washington',
+  '191': 'Wayne', '193': 'White', '195': 'Whiteside', '197': 'Will', '199': 'Williamson',
+  '201': 'Winnebago', '203': 'Woodford'
+};
 
 const AuthContext = createContext();
 
@@ -29,8 +54,14 @@ function AuthProvider({ children }) {
         const res = await axios.get(`${API_URL}/api/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUser(res.data.user);
-      } catch {
+        // Fetch all roles
+        const rolesRes = await axios.get(`${API_URL}/api/user-roles`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log('Roles fetched:', rolesRes.data);
+        setUser({ ...res.data.user, roles: rolesRes.data.roles });
+      } catch (err) {
+        console.error('Auth check error:', err);
         setUser(null);
         setToken(null);
         localStorage.removeItem("token");
@@ -51,11 +82,16 @@ function AuthProvider({ children }) {
     }
     setToken(res.data.token);
     localStorage.setItem("token", res.data.token);
-    setUser({ email, role: res.data.role });
+    // Fetch all roles after login
+    const rolesRes = await axios.get(`${API_URL}/api/user-roles`, {
+      headers: { Authorization: `Bearer ${res.data.token}` },
+    });
+    console.log('Roles after login:', rolesRes.data);
+    setUser({ email, role: res.data.role, roles: rolesRes.data.roles });
     setShowLogin(false);
     setMustResetPassword(false);
     setPendingEmail("");
-    return res.data;
+    return { ...res.data, roles: rolesRes.data.roles };
   };
 
   const forcePasswordReset = async (email, newPassword) => {
@@ -425,35 +461,129 @@ function ForcePasswordResetModal() {
 function App() {
   return (
     <AuthProvider>
-      <div className="app-container" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-        <header style={{ padding: "1rem", background: "#222", color: "#fff", fontSize: "2rem", textAlign: "center" }}>
-          #NoPlaceLeft Illinois
-          <AuthHeaderControls />
-        </header>
-        <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-          <MapDashboard />
-        </div>
-        <LoginModal />
-        <ForgotPasswordModal />
-        <ForcePasswordResetModal />
-      </div>
+      <AppContent />
     </AuthProvider>
   );
 }
 
-function AuthHeaderControls() {
-  const { user, logout, setShowLogin } = useAuth();
+function AppContent() {
+  const [currentPage, setCurrentPage] = useState('map');
+  const { user } = useAuth();
+
   return (
-    <span style={{ float: "right", fontSize: 16 }}>
-      {user ? (
+    <div className="app-container" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      <header style={{ padding: "0.1rem", background: "#222", color: "#fff", fontSize: "2rem", textAlign: "center", display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: "25px" }}>
+        <div style={{ flex: 1, display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
+          <AuthHeaderControls currentPage={currentPage} setCurrentPage={setCurrentPage} />
+        </div>
+        <div style={{ fontSize: "2.4rem", fontWeight: "bold", lineHeight: "1", flex: 2, textAlign: "center" }}>
+          #NoPlaceLeft Illinois
+        </div>
+        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+          <UserInfoAndLogout />
+        </div>
+      </header>
+      <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+        {currentPage === 'map' ? (
+          <MapDashboard />
+        ) : (
+          <DataManagementPage />
+        )}
+      </div>
+      <LoginModal />
+      <ForgotPasswordModal />
+      <ForcePasswordResetModal />
+    </div>
+  );
+}
+
+function AuthHeaderControls({ currentPage, setCurrentPage }) {
+  const { user } = useAuth();
+  
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {user && (
         <>
-          <span style={{ marginRight: 16 }}>Logged in as {user.email}</span>
-          <button onClick={logout} style={{ background: "#fff", color: "#222", border: "none", borderRadius: 4, padding: "4px 12px", cursor: "pointer" }}>Logout</button>
+          <button 
+            onClick={() => setCurrentPage('map')} 
+            style={{ 
+              padding: '2px 8px', 
+              background: currentPage === 'map' ? '#fff' : 'transparent', 
+              color: currentPage === 'map' ? '#222' : '#fff', 
+              border: '1px solid #fff', 
+              borderRadius: 4, 
+              cursor: 'pointer',
+              fontSize: '0.75rem'
+            }}
+          >
+            Map
+          </button>
+          <button 
+            onClick={() => setCurrentPage('database')} 
+            style={{ 
+              padding: '2px 8px', 
+              background: currentPage === 'database' ? '#fff' : 'transparent', 
+              color: currentPage === 'database' ? '#222' : '#fff', 
+              border: '1px solid #fff', 
+              borderRadius: 4, 
+              cursor: 'pointer',
+              fontSize: '0.75rem'
+            }}
+          >
+            Database Management
+          </button>
         </>
-      ) : (
-        <button onClick={() => setShowLogin(true)} style={{ background: "#fff", color: "#222", border: "none", borderRadius: 4, padding: "4px 12px", cursor: "pointer" }}>Coordinator Login</button>
       )}
-    </span>
+    </div>
+  );
+}
+
+function UserInfoAndLogout() {
+  const { user, logout, setShowLogin } = useAuth();
+  
+  // Function to get role display name
+  const getRoleDisplayName = (role, countyfp, tractid) => {
+    switch (role) {
+      case 'state':
+        return 'Illinois State Coordinator';
+      case 'county':
+        return `${COUNTY_NAMES[countyfp] || 'Unknown'} County Coordinator`;
+      case 'tract':
+        return `Census Tract ${tractid} Coordinator`;
+      default:
+        return role;
+    }
+  };
+  
+  // Function to sort roles by hierarchy (state > county > tract)
+  const sortRolesByHierarchy = (roles) => {
+    const hierarchy = { 'state': 3, 'county': 2, 'tract': 1 };
+    return roles.sort((a, b) => hierarchy[b.role] - hierarchy[a.role]);
+  };
+  
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {user && (
+        <>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontWeight: 600, fontSize: '0.75rem' }}>{user.email}</div>
+            {user.roles && user.roles.length > 0 ? (
+              <div style={{ fontSize: '0.65rem', color: '#ccc', marginTop: 1 }}>
+                {sortRolesByHierarchy([...user.roles]).map((role, index) => (
+                  <div key={index}>{getRoleDisplayName(role.role, role.countyfp, role.tractid)}</div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ fontSize: '0.65rem', color: '#ccc', marginTop: 1 }}>(No roles assigned)</div>
+            )}
+          </div>
+          <button onClick={logout} style={{ height: 18, minWidth: 60, fontSize: '0.75rem', padding: '0 8px', borderRadius: 4, background: '#fff', color: '#222', border: '1px solid #ccc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Logout</button>
+        </>
+      )}
+      {!user && (
+        <button onClick={() => setShowLogin(true)} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>Login</button>
+      )}
+    </div>
   );
 }
 
