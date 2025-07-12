@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 src/data/tl_2024_us_county.shp
 src/data/tl_2024_us_county.shp
+
+# Local environment variables
+.env
