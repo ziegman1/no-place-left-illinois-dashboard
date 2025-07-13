@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "cd .. && npm run build",
     "start": "node index.js"
   },
   "keywords": [],
