@@ -214,12 +214,6 @@ db.serialize(() => {
     updated_by TEXT
   )`);
   
-  // Add population column if it doesn't exist
-  db.run(`ALTER TABLE tract_data ADD COLUMN population INTEGER DEFAULT 0`);
-  
-  // Add countyfp column if it doesn't exist
-  db.run(`ALTER TABLE tract_data ADD COLUMN countyfp TEXT`);
-  
   // County data table
   db.run(`CREATE TABLE IF NOT EXISTS county_data (
     county_name TEXT PRIMARY KEY,
