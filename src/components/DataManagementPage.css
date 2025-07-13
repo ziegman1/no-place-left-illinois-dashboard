@@ -167,6 +167,7 @@
   border-radius: 6px;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  table-layout: fixed;
 }
 
 .coordinators-table th,
@@ -281,20 +282,53 @@
     padding: 0.75rem;
   }
   
+  .coordinators-list,
+  .tract-data-list {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -0.75rem;
+    padding: 0 0.75rem;
+  }
+  
   .coordinators-table,
   .tract-data-table {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    min-width: 600px;
   }
   
   .coordinators-table th,
   .coordinators-table td,
   .tract-data-table th,
   .tract-data-table td {
-    padding: 8px;
+    padding: 6px 8px;
+    min-width: 80px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .coordinators-table th:first-child,
+  .coordinators-table td:first-child,
+  .tract-data-table th:first-child,
+  .tract-data-table td:first-child {
+    min-width: 100px;
+  }
+  
+  .coordinators-table th:last-child,
+  .coordinators-table td:last-child,
+  .tract-data-table th:last-child,
+  .tract-data-table td:last-child {
+    min-width: 60px;
   }
   
   .edit-button {
     padding: 4px 8px;
     font-size: 0.8rem;
+    white-space: nowrap;
   }
 } 
