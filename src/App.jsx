@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
 import MapDashboard from "./components/MapDashboard";
 import DataManagementPage from "./components/DataManagementPage";
+import AboutPage from "./components/AboutPage";
 import "./App.css";
 import axios from "axios";
 
@@ -467,12 +468,12 @@ function App() {
 }
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState('map');
+  const [currentPage, setCurrentPage] = useState('about');
   const { user } = useAuth();
 
   return (
     <div className="app-container" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-      <header style={{ padding: "0.1rem", background: "#222", color: "#fff", fontSize: "2rem", textAlign: "center", display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: "25px" }}>
+      <header style={{ padding: "0.5rem", background: "#222", color: "#fff", fontSize: "2rem", textAlign: "center", display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: "60px" }}>
         <div style={{ flex: 1, display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
           <AuthHeaderControls currentPage={currentPage} setCurrentPage={setCurrentPage} />
         </div>
@@ -486,8 +487,12 @@ function AppContent() {
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
         {currentPage === 'map' ? (
           <MapDashboard />
-        ) : (
+        ) : currentPage === 'database' ? (
           <DataManagementPage />
+        ) : currentPage === 'about' ? (
+          <AboutPage />
+        ) : (
+          <MapDashboard />
         )}
       </div>
       <LoginModal />
@@ -502,37 +507,49 @@ function AuthHeaderControls({ currentPage, setCurrentPage }) {
   
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <button 
+        onClick={() => setCurrentPage('about')} 
+        style={{ 
+          padding: '2px 8px', 
+          background: currentPage === 'about' ? '#fff' : 'transparent', 
+          color: currentPage === 'about' ? '#222' : '#fff', 
+          border: '1px solid #fff', 
+          borderRadius: 4, 
+          cursor: 'pointer',
+          fontSize: '0.75rem'
+        }}
+      >
+        About
+      </button>
+      <button 
+        onClick={() => setCurrentPage('map')} 
+        style={{ 
+          padding: '2px 8px', 
+          background: currentPage === 'map' ? '#fff' : 'transparent', 
+          color: currentPage === 'map' ? '#222' : '#fff', 
+          border: '1px solid #fff', 
+          borderRadius: 4, 
+          cursor: 'pointer',
+          fontSize: '0.75rem'
+        }}
+      >
+        Map
+      </button>
       {user && (
-        <>
-          <button 
-            onClick={() => setCurrentPage('map')} 
-            style={{ 
-              padding: '2px 8px', 
-              background: currentPage === 'map' ? '#fff' : 'transparent', 
-              color: currentPage === 'map' ? '#222' : '#fff', 
-              border: '1px solid #fff', 
-              borderRadius: 4, 
-              cursor: 'pointer',
-              fontSize: '0.75rem'
-            }}
-          >
-            Map
-          </button>
-          <button 
-            onClick={() => setCurrentPage('database')} 
-            style={{ 
-              padding: '2px 8px', 
-              background: currentPage === 'database' ? '#fff' : 'transparent', 
-              color: currentPage === 'database' ? '#222' : '#fff', 
-              border: '1px solid #fff', 
-              borderRadius: 4, 
-              cursor: 'pointer',
-              fontSize: '0.75rem'
-            }}
-          >
-            Database Management
-          </button>
-        </>
+        <button 
+          onClick={() => setCurrentPage('database')} 
+          style={{ 
+            padding: '2px 8px', 
+            background: currentPage === 'database' ? '#fff' : 'transparent', 
+            color: currentPage === 'database' ? '#222' : '#fff', 
+            border: '1px solid #fff', 
+            borderRadius: 4, 
+            cursor: 'pointer',
+            fontSize: '0.75rem'
+          }}
+        >
+          Database Management
+        </button>
       )}
     </div>
   );
