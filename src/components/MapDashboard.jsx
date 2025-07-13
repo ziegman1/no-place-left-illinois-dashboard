@@ -33,6 +33,9 @@ function MapDashboard() {
   useEffect(() => {
     if (user && token) {
       fetchDiscipleMakersData();
+    } else {
+      // In view mode, fetch public data
+      fetchPublicData();
     }
   }, [user, token, dataRefreshTrigger]);
 
@@ -57,6 +60,9 @@ function MapDashboard() {
   useEffect(() => {
     if (user && token) {
       fetchDiscipleMakersData();
+    } else {
+      // In view mode, fetch public data
+      fetchPublicData();
     }
   }, []); // Empty dependency array means this runs once when component mounts
 
@@ -105,6 +111,55 @@ function MapDashboard() {
       setTractData(fullTractData);
     } catch (err) {
       console.error("Failed to fetch disciple makers data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch public data for view mode (no authentication required)
+  const fetchPublicData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/api/public/data`);
+      
+      // Process county data
+      const countyDataMap = {};
+      const fullCountyData = {};
+      if (response.data.counties) {
+        response.data.counties.forEach(county => {
+          if (county.discipleMakers !== undefined) {
+            countyDataMap[county.name] = county.discipleMakers;
+            fullCountyData[county.name] = {
+              discipleMakers: county.discipleMakers,
+              simpleChurches: county.simpleChurches || 0,
+              legacyChurches: county.legacyChurches || 0
+            };
+          }
+        });
+      }
+      
+      setDiscipleMakers(countyDataMap);
+      setCountyData(fullCountyData);
+      
+      // Process tract data
+      const tractDataMap = {};
+      const fullTractData = {};
+      if (response.data.tracts) {
+        response.data.tracts.forEach(tract => {
+          if (tract.discipleMakers !== undefined) {
+            tractDataMap[tract.tractId] = tract.discipleMakers;
+            fullTractData[tract.tractId] = {
+              discipleMakers: tract.discipleMakers,
+              simpleChurches: tract.simpleChurches || 0,
+              legacyChurches: tract.legacyChurches || 0
+            };
+          }
+        });
+      }
+      setTractDiscipleMakers(tractDataMap);
+      setTractData(fullTractData);
+    } catch (err) {
+      console.error("Failed to fetch public data:", err);
     } finally {
       setLoading(false);
     }

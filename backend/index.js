@@ -929,6 +929,72 @@ app.get('/api/coordinator/data', requireRole(['state', 'county', 'tract']), (req
   }
 });
 
+// Public endpoint for view mode - no authentication required
+app.get('/api/public/data', (req, res) => {
+  // Get all tract data
+  db.all('SELECT * FROM tract_data ORDER BY tract_id', [], (err, tractData) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    
+    // Calculate county totals by summing tract data
+    const countyTotals = {};
+    
+    // Initialize all counties with 0 values
+    Object.keys(COUNTY_FIPS_TO_NAME).forEach(countyFips => {
+      countyTotals[countyFips] = {
+        name: COUNTY_FIPS_TO_NAME[countyFips],
+        discipleMakers: 0,
+        simpleChurches: 0,
+        legacyChurches: 0
+      };
+    });
+    
+    // Sum tract data into county totals
+    tractData.forEach(tract => {
+      // Extract county FIPS from tract ID
+      const tractId = tract.tract_id;
+      let countyFips = null;
+      
+      if (tractId.length === 11) {
+        // Full FIPS code: extract county part (positions 3-5)
+        countyFips = tractId.substring(2, 5);
+      } else if (tractId.length === 6) {
+        // Short tract code: need to map to county
+        if (tractId === '000502') {
+          countyFips = '113'; // McLean County
+        } else if (tractId.startsWith('001')) {
+          countyFips = '001'; // Adams County
+        } else if (tractId.startsWith('003')) {
+          countyFips = '003'; // Alexander County
+        }
+        // Add more mappings as needed
+      }
+      
+      if (countyFips && countyTotals[countyFips]) {
+        countyTotals[countyFips].discipleMakers += tract.disciple_makers || 0;
+        countyTotals[countyFips].simpleChurches += tract.simple_churches || 0;
+        countyTotals[countyFips].legacyChurches += tract.legacy_churches || 0;
+      }
+    });
+    
+    // Convert to array format for frontend
+    const counties = Object.values(countyTotals);
+    
+    const tracts = tractData.map(tract => ({
+      tractId: tract.tract_id,
+      discipleMakers: tract.disciple_makers || 0,
+      simpleChurches: tract.simple_churches || 0,
+      legacyChurches: tract.legacy_churches || 0
+    }));
+    
+    res.json({
+      counties,
+      tracts,
+      userRole: 'viewer',
+      userScope: 'public'
+    });
+  });
+});
+
 // Get all tract data for a specific county
 app.get('/api/county/:countyfp/tracts', requireRole(['state', 'county']), (req, res) => {
   const { countyfp } = req.params;
