@@ -1375,6 +1375,72 @@ app.get('/api/coordinators', requireRole(['state', 'county']), (req, res) => {
   });
 });
 
+// Sync population data from GeoJSON files to database
+app.post('/api/sync-population-data', requireRole(['state']), (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  
+  try {
+    // Read county GeoJSON file
+    const countyGeoJsonPath = path.join(__dirname, '../public/simplified_illinois_counties.geojson');
+    const tractGeoJsonPath = path.join(__dirname, '../public/fixed_tracts.geojson');
+    
+    if (!fs.existsSync(countyGeoJsonPath) || !fs.existsSync(tractGeoJsonPath)) {
+      return res.status(404).json({ error: 'GeoJSON files not found' });
+    }
+    
+    const countyData = JSON.parse(fs.readFileSync(countyGeoJsonPath, 'utf8'));
+    const tractData = JSON.parse(fs.readFileSync(tractGeoJsonPath, 'utf8'));
+    
+    let updatedCount = 0;
+    let errorCount = 0;
+    
+    // Update tract population data from GeoJSON
+    tractData.features.forEach(feature => {
+      const tractId = feature.properties.TRACTCE || feature.properties.tractce;
+      const countyfp = feature.properties.COUNTYFP || feature.properties.countyfp;
+      
+      // Get population from GeoJSON properties
+      let population = 0;
+      if (feature.properties.POP_2020 !== undefined && feature.properties.POP_2020 !== null) {
+        population = parseInt(feature.properties.POP_2020);
+      } else if (feature.properties.population !== undefined && feature.properties.population !== null) {
+        population = parseInt(feature.properties.population);
+      } else if (feature.properties.POPULATION !== undefined && feature.properties.POPULATION !== null) {
+        population = parseInt(feature.properties.POPULATION);
+      } else if (feature.properties.POP2010 !== undefined && feature.properties.POP2010 !== null) {
+        population = parseInt(feature.properties.POP2010);
+      }
+      
+      if (tractId && population > 0) {
+        db.run(`
+          INSERT OR REPLACE INTO tract_data 
+          (tract_id, population, countyfp, updated_at, updated_by) 
+          VALUES (?, ?, ?, datetime('now'), ?)
+        `, [tractId, population, countyfp, req.user.email], function(err) {
+          if (err) {
+            errorCount++;
+            console.error(`Error updating tract ${tractId}:`, err);
+          } else {
+            updatedCount++;
+          }
+        });
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: `Population data synced successfully. Updated ${updatedCount} tracts, ${errorCount} errors.`,
+      updatedCount,
+      errorCount
+    });
+    
+  } catch (error) {
+    console.error('Error syncing population data:', error);
+    res.status(500).json({ error: 'Failed to sync population data' });
+  }
+});
+
 // Get all tract data
 app.get('/api/tract-data', requireRole(['state', 'county', 'tract']), (req, res) => {
   const { role, countyfp, tractid } = req.user;
@@ -1411,6 +1477,11 @@ app.get('/api/tract-data', requireRole(['state', 'county', 'tract']), (req, res)
         updatedBy: tract.updated_by
       };
     });
+    
+    // Ensure all data follows the correct structure:
+    // - Population data comes from GeoJSON files (already handled in frontend)
+    // - Disciple-makers, simple churches, and legacy churches start at 0
+    // - % far from God calculation is handled in frontend based on 85% starting point
     
     res.json(formattedTractData);
   });

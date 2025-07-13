@@ -26,6 +26,17 @@ function MapDashboard() {
 
   useEffect(() => {
     fetchData();
+    
+    // Listen for data changes from other components
+    const handleDataChange = () => {
+      fetchData();
+    };
+    
+    window.addEventListener('dataChanged', handleDataChange);
+    
+    return () => {
+      window.removeEventListener('dataChanged', handleDataChange);
+    };
   }, []);
 
   const fetchData = async () => {
@@ -120,6 +131,26 @@ function MapDashboard() {
     }
   };
 
+  const handleDataUpdate = (id, newData) => {
+    // Update local state when data is changed from HoverInfoBox
+    if (selectedCounty) {
+      // County level update
+      setDiscipleMakers(prev => ({ ...prev, [id]: newData.discipleMakers }));
+    } else {
+      // Tract level update
+      setTractDiscipleMakers(prev => ({ ...prev, [id]: newData.discipleMakers }));
+      setTractData(prev => ({
+        ...prev,
+        [id]: {
+          ...prev[id],
+          discipleMakers: newData.discipleMakers,
+          simpleChurches: newData.simpleChurches,
+          legacyChurches: newData.legacyChurches
+        }
+      }));
+    }
+  };
+
   const handleDataRefresh = () => {
     fetchData();
   };
@@ -159,6 +190,7 @@ function MapDashboard() {
             tractPopulationsByCounty={tractPopulationsByCounty}
             coordinator={coordinator}
             countyName={countyName}
+            onDataUpdate={handleDataUpdate}
           />
           {selectedCounty && (
             <button

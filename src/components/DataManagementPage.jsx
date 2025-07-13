@@ -171,6 +171,107 @@ function CoordinatorEditModal({ coordinator, isOpen, onClose, onSave, isNew = fa
   );
 }
 
+// Tract Edit Modal Component
+function TractEditModal({ tract, isOpen, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    discipleMakers: 0,
+    simpleChurches: 0,
+    legacyChurches: 0
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (isOpen && tract) {
+      setFormData({
+        discipleMakers: tract.discipleMakers || 0,
+        simpleChurches: tract.simpleChurches || 0,
+        legacyChurches: tract.legacyChurches || 0
+      });
+      setError("");
+    }
+  }, [isOpen, tract]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      await onSave(tract.tractId, formData);
+      onClose();
+    } catch (err) {
+      setError(err.message || "Failed to save tract data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h2>Edit Tract Data</h2>
+          <button onClick={onClose} className="modal-close">×</button>
+        </div>
+        
+        <div style={{ marginBottom: 16 }}>
+          <h3 style={{ margin: "0 0 8px 0", color: "#333" }}>Tract ID: {tract?.tractId}</h3>
+          <p style={{ margin: 0, color: "#666" }}>Population: {tract?.population?.toLocaleString() || "N/A"}</p>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Disciple Makers *</label>
+            <input
+              type="number"
+              min={0}
+              value={formData.discipleMakers}
+              onChange={(e) => setFormData({...formData, discipleMakers: parseInt(e.target.value) || 0})}
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>Simple Churches *</label>
+            <input
+              type="number"
+              min={0}
+              value={formData.simpleChurches}
+              onChange={(e) => setFormData({...formData, simpleChurches: parseInt(e.target.value) || 0})}
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>Legacy Churches *</label>
+            <input
+              type="number"
+              min={0}
+              value={formData.legacyChurches}
+              onChange={(e) => setFormData({...formData, legacyChurches: parseInt(e.target.value) || 0})}
+              required
+            />
+          </div>
+          
+          {error && <div className="error-message">{error}</div>}
+          
+          <div className="modal-actions">
+            <button type="submit" disabled={loading} className="btn-primary">
+              {loading ? "Saving..." : "Save Changes"}
+            </button>
+            <button type="button" onClick={onClose} className="btn-secondary">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function DataManagementPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [coordinators, setCoordinators] = useState([]);
@@ -181,6 +282,8 @@ function DataManagementPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewCoordinator, setIsNewCoordinator] = useState(false);
   const [coordinatorStats, setCoordinatorStats] = useState({});
+  const [editingTract, setEditingTract] = useState(null);
+  const [isTractEditModalOpen, setIsTractEditModalOpen] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -203,10 +306,15 @@ function DataManagementPage() {
         fetchTractData();
       }
     };
-
+    
     window.addEventListener('dataChanged', handleDataChange);
-    return () => window.removeEventListener('dataChanged', handleDataChange);
+    
+    return () => {
+      window.removeEventListener('dataChanged', handleDataChange);
+    };
   }, [activeTab]);
+
+
 
   const fetchCoordinators = async () => {
     setLoading(true);
@@ -428,6 +536,45 @@ function DataManagementPage() {
     setIsEditModalOpen(false);
     setEditingCoordinator(null);
     setIsNewCoordinator(false);
+  };
+
+  const handleEditTract = (tract) => {
+    setEditingTract(tract);
+    setIsTractEditModalOpen(true);
+  };
+
+  const closeTractEditModal = () => {
+    setIsTractEditModalOpen(false);
+    setEditingTract(null);
+  };
+
+  const handleSaveTract = async (tractId, formData) => {
+    try {
+      const API_URL = getApiUrl();
+      const token = localStorage.getItem("token");
+      
+      await axios.post(`${API_URL}/api/tract-data/update`, {
+        tractId,
+        discipleMakers: formData.discipleMakers,
+        simpleChurches: formData.simpleChurches,
+        legacyChurches: formData.legacyChurches
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Update local state
+      setTractData(prev => prev.map(tract => 
+        tract.tractId === tractId 
+          ? { ...tract, ...formData }
+          : tract
+      ));
+      
+      // Notify other components that data has changed
+      window.dispatchEvent(new Event('dataChanged'));
+      
+    } catch (err) {
+      throw new Error(err.response?.data?.error || "Failed to update tract data");
+    }
   };
 
   return (
@@ -662,7 +809,7 @@ function DataManagementPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {tractData.slice(0, 20).map((tract, index) => {
+                        {tractData.map((tract, index) => {
                           const goal = Math.round(0.1 * (tract.population || 0));
                           const progress = goal > 0 ? Math.min(1, (tract.discipleMakers || 0) / goal) : 0;
                           
@@ -703,7 +850,12 @@ function DataManagementPage() {
                                 </div>
                               </td>
                               <td>
-                                <button className="edit-button">Edit</button>
+                                <button 
+                                  onClick={() => handleEditTract(tract)}
+                                  className="edit-button"
+                                >
+                                  Edit
+                                </button>
                               </td>
                             </tr>
                           );
@@ -724,6 +876,35 @@ function DataManagementPage() {
               </p>
               
               <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '2rem' }}>
+                <button 
+                  onClick={async () => {
+                    if (window.confirm('Are you sure you want to sync population data from GeoJSON files? This will update all tract population data.')) {
+                      try {
+                        const API_URL = getApiUrl();
+                        const token = localStorage.getItem("token");
+                        const response = await axios.post(`${API_URL}/api/sync-population-data`, {}, {
+                          headers: { Authorization: `Bearer ${token}` }
+                        });
+                        alert(`Population data synced successfully! Updated ${response.data.updatedCount} tracts.`);
+                        fetchTractData(); // Refresh the data
+                      } catch (err) {
+                        alert('Failed to sync population data: ' + (err.response?.data?.error || err.message));
+                      }
+                    }
+                  }}
+                  style={{
+                    padding: '1rem 2rem',
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '1rem'
+                  }}
+                >
+                  Sync Population Data
+                </button>
+                
                 <button 
                   onClick={async () => {
                     if (window.confirm('Are you sure you want to clear all tract data? This action cannot be undone.')) {
@@ -794,6 +975,14 @@ function DataManagementPage() {
         onClose={closeEditModal}
         onSave={handleSaveCoordinator}
         isNew={isNewCoordinator}
+      />
+
+      {/* Tract Edit Modal */}
+      <TractEditModal
+        tract={editingTract}
+        isOpen={isTractEditModalOpen}
+        onClose={closeTractEditModal}
+        onSave={handleSaveTract}
       />
     </div>
   );
