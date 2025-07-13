@@ -26,8 +26,15 @@ function DataManagementPage() {
     setError("");
     try {
       const API_URL = getApiUrl();
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Please log in to view coordinator data");
+        setCoordinators([]);
+        return;
+      }
+      
       const response = await axios.get(`${API_URL}/api/coordinators`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       
       // Ensure response.data is an array
@@ -51,8 +58,15 @@ function DataManagementPage() {
     setError("");
     try {
       const API_URL = getApiUrl();
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Please log in to view tract data");
+        setTractData([]);
+        return;
+      }
+      
       const response = await axios.get(`${API_URL}/api/tract-data`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       
       // Ensure we have an array of tract data

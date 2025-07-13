@@ -31,9 +31,12 @@ function MapDashboard() {
   const fetchData = async () => {
     try {
       const API_URL = getApiUrl();
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      
       const [discipleRes, tractRes] = await Promise.all([
-        axios.get(`${API_URL}/api/disciple-makers`),
-        axios.get(`${API_URL}/api/tract-data`)
+        axios.get(`${API_URL}/api/disciple-makers`, { headers }),
+        axios.get(`${API_URL}/api/tract-data`, { headers })
       ]);
       
       setDiscipleMakers(discipleRes.data);
