@@ -1,0 +1,300 @@
+.data-management-container {
+  padding: 20px;
+  background-color: #f5f5f5;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.data-management-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  color: #222;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.data-management-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  overflow: hidden;
+  flex: 1;
+  height: 100%;
+  width: 100%;
+}
+
+.tab-navigation {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  background-color: #f8f9fa;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab-button {
+  padding: 1rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-weight: 400;
+  color: #666;
+  white-space: nowrap;
+  min-width: 0;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.tab-button.active {
+  background: #fff;
+  border-bottom-color: #007bff;
+  font-weight: 600;
+  color: #007bff;
+}
+
+.tab-content {
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.tab-content h2 {
+  margin-bottom: 1rem;
+  color: #222;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.tab-content p {
+  color: #666;
+  margin-bottom: 1.5rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.5;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.overview-card {
+  padding: 1.5rem;
+  border-radius: 6px;
+  border: 1px solid;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.overview-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.overview-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+.overview-card.coordinator {
+  background-color: #e8f4fd;
+  border-color: #b3d9ff;
+}
+
+.overview-card.coordinator h3 {
+  color: #0066cc;
+}
+
+.overview-card.tract {
+  background-color: #f0f8f0;
+  border-color: #b3e6b3;
+}
+
+.overview-card.tract h3 {
+  color: #006600;
+}
+
+.overview-card.reports {
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+}
+
+.overview-card.reports h3 {
+  color: #856404;
+}
+
+.placeholder-content {
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  text-align: center;
+  color: #666;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-style: italic;
+}
+
+.error-message {
+  text-align: center;
+  padding: 2rem;
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+}
+
+.coordinators-table,
+.tract-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background-color: white;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.coordinators-table th,
+.coordinators-table td,
+.tract-data-table th,
+.tract-data-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.coordinators-table th,
+.tract-data-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.coordinators-table tr:hover,
+.tract-data-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+.edit-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.edit-button:hover {
+  background-color: #0056b3;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .data-management-container {
+    padding: 10px;
+  }
+  
+  .data-management-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .tab-navigation {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  
+  .tab-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    min-width: 80px;
+  }
+  
+  .tab-content {
+    padding: 1rem;
+  }
+  
+  .tab-content h2 {
+    font-size: 1.3rem;
+  }
+  
+  .overview-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  
+  .overview-card {
+    padding: 1rem;
+  }
+  
+  .overview-card h3 {
+    font-size: 1rem;
+  }
+  
+  .placeholder-content {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .data-management-container {
+    padding: 8px;
+  }
+  
+  .data-management-title {
+    font-size: 1.3rem;
+  }
+  
+  .tab-button {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+    min-width: 70px;
+  }
+  
+  .tab-content {
+    padding: 0.75rem;
+  }
+  
+  .tab-content h2 {
+    font-size: 1.2rem;
+  }
+  
+  .overview-card {
+    padding: 0.75rem;
+  }
+  
+  .coordinators-table,
+  .tract-data-table {
+    font-size: 0.9rem;
+  }
+  
+  .coordinators-table th,
+  .coordinators-table td,
+  .tract-data-table th,
+  .tract-data-table td {
+    padding: 8px;
+  }
+  
+  .edit-button {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+} 

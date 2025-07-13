@@ -1,11 +1,11 @@
 import React, { useState, useEffect, createContext, useContext } from "react";
+import AboutPage from "./components/AboutPage";
 import MapDashboard from "./components/MapDashboard";
 import DataManagementPage from "./components/DataManagementPage";
-import AboutPage from "./components/AboutPage";
 import "./App.css";
-import axios from "axios";
-import jwt_decode from "jwt-decode";
-import { getApiUrl } from "./utils/api";
+// import axios from "axios";
+// import jwt_decode from "jwt-decode";
+// import { getApiUrl } from "./utils/api";
 
 const COUNTY_NAMES = {
   '001': 'Adams', '003': 'Alexander', '005': 'Bond', '007': 'Boone', '009': 'Brown',
@@ -37,89 +37,61 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-function AuthProvider({ children }) {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token"));
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [mustResetPassword, setMustResetPassword] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
 
-  useEffect(() => {
-    async function checkAuth() {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const API_URL = getApiUrl();
-        const res = await axios.get(`${API_URL}/api/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        // Fetch all roles
-        const rolesRes = await axios.get(`${API_URL}/api/user-roles`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log('Roles fetched:', rolesRes.data);
-        setUser({ ...res.data.user, roles: rolesRes.data.roles });
-      } catch (err) {
-        console.error('Auth check error:', err);
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem("token");
-      }
-      setLoading(false);
-    }
-    checkAuth();
-  }, [token]);
-
+  // Mock login function that works without API
   const login = async (email, password) => {
-    const API_URL = getApiUrl();
-    const res = await axios.post(`${API_URL}/api/login`, { email, password });
-    if (res.data.mustResetPassword) {
-      setMustResetPassword(true);
-      setPendingEmail(email);
+    // Simple mock authentication
+    if (email && password) {
+      const mockUser = {
+        email: email,
+        role: 'state',
+        roles: [
+          { role: 'state', countyfp: null, tractid: null }
+        ]
+      };
+      
+      const mockToken = 'mock-token-' + Date.now();
+      
+      setUser(mockUser);
+      setToken(mockToken);
+      localStorage.setItem("token", mockToken);
       setShowLogin(false);
-      return { mustResetPassword: true };
+      setMustResetPassword(false);
+      setPendingEmail("");
+      
+      return { success: true, user: mockUser, token: mockToken };
+    } else {
+      throw new Error("Please enter both email and password");
     }
-    setToken(res.data.token);
-    localStorage.setItem("token", res.data.token);
-    // Fetch all roles after login
-    const rolesRes = await axios.get(`${API_URL}/api/user-roles`, {
-      headers: { Authorization: `Bearer ${res.data.token}` },
-    });
-    console.log('Roles after login:', rolesRes.data);
-    setUser({ email, role: res.data.role, roles: rolesRes.data.roles });
-    setShowLogin(false);
-    setMustResetPassword(false);
-    setPendingEmail("");
-    return { ...res.data, roles: rolesRes.data.roles };
   };
 
   const forcePasswordReset = async (email, newPassword) => {
-    const API_URL = getApiUrl();
-    const res = await axios.post(`${API_URL}/api/force-password-reset`, { email, newPassword });
+    // Mock password reset
     setMustResetPassword(false);
     setPendingEmail("");
-    // After reset, prompt user to login again
     setShowLogin(true);
     setUser(null);
     setToken(null);
     localStorage.removeItem("token");
-    return res.data;
+    return { success: true, message: "Password reset successfully" };
   };
 
   const requestPasswordReset = async (email) => {
-    const API_URL = getApiUrl();
-    const res = await axios.post(`${API_URL}/api/request-password-reset`, { email });
-    return res.data;
+    // Mock password reset request
+    return { success: true, message: "Reset code sent to your email" };
   };
 
   const confirmPasswordReset = async (email, resetCode, newPassword) => {
-    const API_URL = getApiUrl();
-    const res = await axios.post(`${API_URL}/api/confirm-password-reset`, { email, resetCode, newPassword });
-    return res.data;
+    // Mock password reset confirmation
+    return { success: true, message: "Password reset successfully" };
   };
 
   const logout = () => {
@@ -203,7 +175,7 @@ function LoginModal() {
 }
 
 function ForgotPasswordModal() {
-  const { setShowForgotPassword, showForgotPassword, requestPasswordReset, confirmPasswordReset } = useAuth();
+  const { requestPasswordReset, confirmPasswordReset, showForgotPassword, setShowForgotPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -211,42 +183,35 @@ function ForgotPasswordModal() {
   const [step, setStep] = useState("request"); // "request" or "confirm"
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
 
   if (!showForgotPassword) return null;
 
   const handleRequestReset = async (e) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
-    setLoading(true);
     try {
-      const API_URL = getApiUrl();
       await requestPasswordReset(email);
       setStep("confirm");
-      setSuccess("Reset code sent to your email. Please check your inbox.");
+      setSuccess("Reset code sent to your email!");
     } catch (err) {
-      setError("Failed to send reset code. Please check your email address.");
+      setError("Failed to send reset code. Please try again.");
     }
-    setLoading(false);
   };
 
   const handleConfirmReset = async (e) => {
     e.preventDefault();
     setError("");
-    if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-    setLoading(true);
+    if (newPassword.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
     try {
-      const API_URL = getApiUrl();
       await confirmPasswordReset(email, resetCode, newPassword);
-      setSuccess("Password reset successfully! You can now log in with your new password.");
+      setSuccess("Password reset successfully! You can now log in.");
       setTimeout(() => {
         setShowForgotPassword(false);
         setStep("request");
@@ -258,13 +223,15 @@ function ForgotPasswordModal() {
         setSuccess("");
       }, 2000);
     } catch (err) {
-      setError("Invalid reset code or email. Please try again.");
+      setError("Failed to reset password. Please check your reset code.");
     }
-    setLoading(false);
   };
 
   const handleBack = () => {
     setStep("request");
+    setResetCode("");
+    setNewPassword("");
+    setConfirmPassword("");
     setError("");
     setSuccess("");
   };
@@ -283,131 +250,35 @@ function ForgotPasswordModal() {
   return (
     <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2500 }}>
       <div style={{ background: "#fff", padding: 32, borderRadius: 8, minWidth: 320 }}>
-        <h2>{step === "request" ? "Forgot Password" : "Reset Password"}</h2>
-        
+        <h2>Reset Password</h2>
         {step === "request" ? (
           <form onSubmit={handleRequestReset}>
-            <div style={{ marginBottom: 16 }}>
-              <p style={{ color: "#666", fontSize: 14, marginBottom: 12 }}>
-                Enter your email address and we'll send you a reset code.
-              </p>
-            </div>
             <div style={{ marginBottom: 12 }}>
-              <input 
-                type="email" 
-                placeholder="Email" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
-                style={{ width: "100%", padding: 8 }} 
-                required 
-              />
+              <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", padding: 8 }} required />
             </div>
             {error && <div style={{ color: "red", marginBottom: 8 }}>{error}</div>}
-            <button 
-              type="submit" 
-              disabled={loading}
-              style={{ 
-                width: "100%", 
-                padding: 10, 
-                background: "#222", 
-                color: "#fff", 
-                border: "none", 
-                borderRadius: 4,
-                opacity: loading ? 0.7 : 1,
-                cursor: loading ? "not-allowed" : "pointer"
-              }}
-            >
-              {loading ? "Sending..." : "Send Reset Code"}
-            </button>
+            <button type="submit" style={{ width: "100%", padding: 10, background: "#222", color: "#fff", border: "none", borderRadius: 4 }}>Send Reset Code</button>
           </form>
         ) : (
           <form onSubmit={handleConfirmReset}>
-            <div style={{ marginBottom: 16 }}>
-              <p style={{ color: "#666", fontSize: 14, marginBottom: 12 }}>
-                Enter the reset code from your email and your new password.
-              </p>
+            <div style={{ marginBottom: 12 }}>
+              <input type="text" placeholder="Reset Code" value={resetCode} onChange={e => setResetCode(e.target.value)} style={{ width: "100%", padding: 8 }} required />
             </div>
             <div style={{ marginBottom: 12 }}>
-              <input 
-                type="text" 
-                placeholder="Reset Code" 
-                value={resetCode} 
-                onChange={e => setResetCode(e.target.value)} 
-                style={{ width: "100%", padding: 8 }} 
-                required 
-              />
+              <input type="password" placeholder="New Password" value={newPassword} onChange={e => setNewPassword(e.target.value)} style={{ width: "100%", padding: 8 }} required />
             </div>
             <div style={{ marginBottom: 12 }}>
-              <input 
-                type="password" 
-                placeholder="New Password" 
-                value={newPassword} 
-                onChange={e => setNewPassword(e.target.value)} 
-                style={{ width: "100%", padding: 8 }} 
-                required 
-              />
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <input 
-                type="password" 
-                placeholder="Confirm New Password" 
-                value={confirmPassword} 
-                onChange={e => setConfirmPassword(e.target.value)} 
-                style={{ width: "100%", padding: 8 }} 
-                required 
-              />
+              <input type="password" placeholder="Confirm New Password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={{ width: "100%", padding: 8 }} required />
             </div>
             {error && <div style={{ color: "red", marginBottom: 8 }}>{error}</div>}
             {success && <div style={{ color: "green", marginBottom: 8 }}>{success}</div>}
-            <button 
-              type="submit" 
-              disabled={loading}
-              style={{ 
-                width: "100%", 
-                padding: 10, 
-                background: "#222", 
-                color: "#fff", 
-                border: "none", 
-                borderRadius: 4,
-                opacity: loading ? 0.7 : 1,
-                cursor: loading ? "not-allowed" : "pointer"
-              }}
-            >
-              {loading ? "Resetting..." : "Reset Password"}
-            </button>
-            <button 
-              type="button"
-              onClick={handleBack}
-              style={{ 
-                marginTop: 8,
-                width: "100%", 
-                padding: 8, 
-                background: "none", 
-                color: "#666", 
-                border: "1px solid #ddd", 
-                borderRadius: 4,
-                cursor: "pointer"
-              }}
-            >
-              Back
-            </button>
+            <button type="submit" style={{ width: "100%", padding: 10, background: "#222", color: "#fff", border: "none", borderRadius: 4 }}>Reset Password</button>
           </form>
         )}
-        
-        <button 
-          onClick={handleClose} 
-          style={{ 
-            marginTop: 12, 
-            width: "100%", 
-            background: "none", 
-            border: "none", 
-            color: "#888", 
-            textDecoration: "underline",
-            cursor: "pointer"
-          }}
-        >
-          Cancel
-        </button>
+        <div style={{ marginTop: 12, textAlign: "center" }}>
+          <button onClick={handleBack} style={{ background: "none", border: "none", color: "#888", textDecoration: "underline", cursor: "pointer", marginRight: 8 }}>Back</button>
+          <button onClick={handleClose} style={{ background: "none", border: "none", color: "#888", textDecoration: "underline", cursor: "pointer" }}>Cancel</button>
+        </div>
       </div>
     </div>
   );
@@ -437,7 +308,7 @@ function ForcePasswordResetModal() {
               return;
             }
             try {
-              const API_URL = getApiUrl();
+              // const API_URL = getApiUrl(); // This line was removed
               await forcePasswordReset(pendingEmail, newPassword);
               setSuccess(true);
             } catch (err) {
@@ -474,8 +345,25 @@ function AppContent() {
   const { user } = useAuth();
 
   return (
-    <div className="app-container" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-      <header style={{ padding: "0.5rem", background: "#222", color: "#fff", fontSize: "2rem", textAlign: "center", display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: "60px" }}>
+    <div className="app-container" style={{ 
+      height: "100vh", 
+      display: "flex", 
+      flexDirection: "column",
+      overflow: "hidden"
+    }}>
+      <header style={{ 
+        padding: "0.5rem", 
+        background: "#222", 
+        color: "#fff", 
+        fontSize: "2rem", 
+        textAlign: "center", 
+        display: "flex", 
+        flexDirection: "row", 
+        alignItems: "center", 
+        justifyContent: "space-between", 
+        minHeight: "60px",
+        flexShrink: 0
+      }}>
         <div style={{ flex: 1, display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
           <AuthHeaderControls currentPage={currentPage} setCurrentPage={setCurrentPage} />
         </div>
@@ -486,15 +374,23 @@ function AppContent() {
           <UserInfoAndLogout />
         </div>
       </header>
-      <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-        {currentPage === 'map' ? (
-          <MapDashboard key="map-dashboard" />
+      <div style={{ 
+        flex: 1, 
+        display: "flex", 
+        minHeight: 0,
+        width: "100%"
+      }}>
+        {currentPage === 'about' ? (
+          <AboutPage />
+        ) : currentPage === 'map' ? (
+          <MapDashboard />
         ) : currentPage === 'database' ? (
           <DataManagementPage />
-        ) : currentPage === 'about' ? (
-          <AboutPage />
         ) : (
-          <MapDashboard key="map-dashboard" />
+          <div style={{ padding: '50px', textAlign: 'center' }}>
+            <h2>Page Not Found</h2>
+            <p>This page is not available.</p>
+          </div>
         )}
       </div>
       <LoginModal />

@@ -1,0 +1,205 @@
+.map-dashboard-container {
+  padding: 20px;
+  background-color: #f5f5f5;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.map-dashboard-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  color: #222;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.map-content-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.map-description {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.map-subdescription {
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.map-features-grid {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.map-feature-card {
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid;
+  min-width: 200px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.map-feature-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.map-feature-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+.map-feature-card.county {
+  background-color: #e8f4fd;
+  border-color: #b3d9ff;
+}
+
+.map-feature-card.county h3 {
+  color: #0066cc;
+}
+
+.map-feature-card.tract {
+  background-color: #f0f8f0;
+  border-color: #b3e6b3;
+}
+
+.map-feature-card.tract h3 {
+  color: #006600;
+}
+
+.map-info-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 300px;
+  max-height: calc(100% - 40px);
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  padding: 20px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.back-to-counties-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 14px;
+  z-index: 1000;
+  transition: background-color 0.2s ease;
+}
+
+.back-to-counties-button:hover {
+  background-color: #0056b3;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .map-dashboard-container {
+    padding: 10px;
+    height: 100%;
+  }
+  
+  .map-dashboard-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .map-content-card {
+    padding: 1rem;
+    max-width: 100%;
+  }
+  
+  .map-description {
+    font-size: 1rem;
+  }
+  
+  .map-subdescription {
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .map-features-grid {
+    gap: 0.75rem;
+  }
+  
+  .map-feature-card {
+    padding: 0.75rem;
+    min-width: 150px;
+  }
+  
+  .map-feature-card h3 {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .map-dashboard-container {
+    padding: 8px;
+  }
+  
+  .map-dashboard-title {
+    font-size: 1.3rem;
+  }
+  
+  .map-content-card {
+    padding: 0.75rem;
+  }
+  
+  .map-feature-card {
+    padding: 0.6rem;
+    min-width: 120px;
+  }
+  
+  .map-info-panel {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    max-height: 200px;
+    margin-top: 10px;
+    border-radius: 6px;
+    padding: 15px;
+  }
+  
+  .back-to-counties-button {
+    position: relative;
+    top: auto;
+    left: auto;
+    margin-bottom: 10px;
+    width: 100%;
+  }
+} 

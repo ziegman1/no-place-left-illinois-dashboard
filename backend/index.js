@@ -1261,6 +1261,127 @@ function cleanupExpiredCodes() {
 // Clean up expired codes every hour
 setInterval(cleanupExpiredCodes, 60 * 60 * 1000);
 
+// Get all coordinators
+app.get('/api/coordinators', requireRole(['state', 'county']), (req, res) => {
+  const { role, countyfp } = req.user;
+  
+  let query = `
+    SELECT id, email, role, countyfp, tractid, first_name, last_name 
+    FROM users 
+    WHERE role IN ('county', 'tract')
+  `;
+  let params = [];
+  
+  // County coordinators can only see tract coordinators in their county
+  if (role === 'county') {
+    query += ' AND countyfp = ?';
+    params.push(countyfp);
+  }
+  
+  query += ' ORDER BY role, first_name, last_name';
+  
+  db.all(query, params, (err, coordinators) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    
+    const formattedCoordinators = coordinators.map(coord => ({
+      id: coord.id,
+      name: `${coord.first_name || ''} ${coord.last_name || ''}`.trim() || coord.email,
+      email: coord.email,
+      role: coord.role,
+      countyfp: coord.countyfp,
+      tractid: coord.tractid
+    }));
+    
+    res.json(formattedCoordinators);
+  });
+});
+
+// Get all tract data
+app.get('/api/tract-data', requireRole(['state', 'county', 'tract']), (req, res) => {
+  const { role, countyfp, tractid } = req.user;
+  
+  let query = 'SELECT * FROM tract_data';
+  let params = [];
+  
+  // Filter by user permissions
+  if (role === 'county') {
+    // County coordinators can see all tracts in their county
+    // For now, we'll return all tract data and filter on frontend
+    // In a real implementation, you'd want to store county information with tract data
+  } else if (role === 'tract') {
+    // Tract coordinators can only see their assigned tract
+    query += ' WHERE tract_id = ?';
+    params.push(tractid);
+  }
+  
+  query += ' ORDER BY tract_id';
+  
+  db.all(query, params, (err, tractData) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    
+    const formattedTractData = {};
+    tractData.forEach(tract => {
+      formattedTractData[tract.tract_id] = {
+        tractId: tract.tract_id,
+        population: tract.population || 0,
+        discipleMakers: tract.disciple_makers || 0,
+        simpleChurches: tract.simple_churches || 0,
+        legacyChurches: tract.legacy_churches || 0,
+        countyfp: tract.countyfp || null,
+        updatedAt: tract.updated_at,
+        updatedBy: tract.updated_by
+      };
+    });
+    
+    res.json(formattedTractData);
+  });
+});
+
+// Get disciple makers data (for map)
+app.get('/api/disciple-makers', (req, res) => {
+  // This endpoint returns county-level disciple makers data
+  // For now, we'll calculate it from tract data
+  db.all('SELECT * FROM tract_data', [], (err, tractData) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    
+    const countyTotals = {};
+    
+    // Initialize all counties with 0 values
+    Object.keys(COUNTY_FIPS_TO_NAME).forEach(countyFips => {
+      countyTotals[COUNTY_FIPS_TO_NAME[countyFips]] = 0;
+    });
+    
+    // Sum tract data into county totals
+    tractData.forEach(tract => {
+      // Extract county FIPS from tract ID
+      const tractId = tract.tract_id;
+      let countyFips = null;
+      
+      if (tractId.length === 11) {
+        // Full FIPS code: extract county part (positions 3-5)
+        countyFips = tractId.substring(2, 5);
+      } else if (tractId.length === 6) {
+        // Short tract code: need to map to county
+        if (tractId === '000502') {
+          countyFips = '113'; // McLean County
+        } else if (tractId.startsWith('001')) {
+          countyFips = '001'; // Adams County
+        } else if (tractId.startsWith('003')) {
+          countyFips = '003'; // Alexander County
+        }
+        // Add more mappings as needed
+      }
+      
+      if (countyFips && COUNTY_FIPS_TO_NAME[countyFips]) {
+        const countyName = COUNTY_FIPS_TO_NAME[countyFips];
+        countyTotals[countyName] += tract.disciple_makers || 0;
+      }
+    });
+    
+    res.json(countyTotals);
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
