@@ -3,9 +3,9 @@ import AboutPage from "./components/AboutPage";
 import MapDashboard from "./components/MapDashboard";
 import DataManagementPage from "./components/DataManagementPage";
 import "./App.css";
-// import axios from "axios";
-// import jwt_decode from "jwt-decode";
-// import { getApiUrl } from "./utils/api";
+import axios from "axios";
+import jwt_decode from "jwt-decode";
+import { getApiUrl } from "./utils/api";
 
 const COUNTY_NAMES = {
   '001': 'Adams', '003': 'Alexander', '005': 'Bond', '007': 'Boone', '009': 'Brown',
@@ -48,28 +48,37 @@ export function AuthProvider({ children }) {
 
   // Mock login function that works without API
   const login = async (email, password) => {
-    // Simple mock authentication
-    if (email && password) {
-      const mockUser = {
-        email: email,
-        role: 'state',
+    try {
+      const API_URL = getApiUrl();
+      const response = await axios.post(`${API_URL}/api/login`, {
+        email,
+        password
+      });
+      
+      const { token, role, countyfp, tractid, email: userEmail, mustResetPassword } = response.data;
+      
+      const user = {
+        email: userEmail,
+        role: role,
         roles: [
-          { role: 'state', countyfp: null, tractid: null }
+          { role: role, countyfp: countyfp, tractid: tractid }
         ]
       };
       
-      const mockToken = 'mock-token-' + Date.now();
-      
-      setUser(mockUser);
-      setToken(mockToken);
-      localStorage.setItem("token", mockToken);
+      setUser(user);
+      setToken(token);
+      localStorage.setItem("token", token);
       setShowLogin(false);
-      setMustResetPassword(false);
+      setMustResetPassword(mustResetPassword);
       setPendingEmail("");
       
-      return { success: true, user: mockUser, token: mockToken };
-    } else {
-      throw new Error("Please enter both email and password");
+      return { success: true, user, token, mustResetPassword };
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        throw new Error("Invalid email or password");
+      } else {
+        throw new Error("Login failed. Please try again.");
+      }
     }
   };
 
