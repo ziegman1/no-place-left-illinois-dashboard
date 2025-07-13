@@ -70,6 +70,58 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
     if (countyGEOID) fetchData();
   }, [countyGEOID]);
 
+  // Force refresh when component mounts (for page switching)
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        console.log("Force refreshing tracts for county:", countyGEOID);
+        const res = await axios.get("/fixed_tracts.geojson");
+        // Filter tracts for the selected county
+        const filtered = {
+          ...res.data,
+          features: res.data.features.filter(f => {
+            const countyfp = f.properties.COUNTYFP || f.properties.countyfp || f.properties.COUNTY_GEOID || f.properties.COUNTY || f.properties.COUNTY_ID;
+            return countyfp === countyGEOID;
+          })
+        };
+        setTractData(filtered);
+        
+        // Calculate center of the tracts
+        if (filtered.features.length > 0) {
+          let minLat = Infinity, maxLat = -Infinity, minLng = Infinity, maxLng = -Infinity;
+          
+          filtered.features.forEach(feature => {
+            if (feature.geometry && feature.geometry.coordinates) {
+              // Handle both Polygon and MultiPolygon
+              const coordinates = feature.geometry.type === 'Polygon' 
+                ? feature.geometry.coordinates 
+                : feature.geometry.coordinates.flat();
+              
+              coordinates.forEach(ring => {
+                ring.forEach(coord => {
+                  const [lng, lat] = coord;
+                  minLat = Math.min(minLat, lat);
+                  maxLat = Math.max(maxLat, lat);
+                  minLng = Math.min(minLng, lng);
+                  maxLng = Math.max(maxLng, lng);
+                });
+              });
+            }
+          });
+          
+          if (minLat !== Infinity && maxLat !== -Infinity) {
+            const centerLat = (minLat + maxLat) / 2;
+            const centerLng = (minLng + maxLng) / 2;
+            setMapCenter([centerLat, centerLng]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to refresh tracts GeoJSON", err);
+      }
+    }
+    if (countyGEOID) fetchData();
+  }, []); // Empty dependency array means this runs once when component mounts
+
   function getTractInfo(feature) {
     const tractCe = feature.properties.TRACTCE || feature.properties.tractce;
     const countyFp = feature.properties.COUNTYFP || feature.properties.countyfp;
@@ -231,7 +283,7 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
               data={tractData}
               onEachFeature={onEachFeature}
               ref={geoJsonLayerRef}
-              key={JSON.stringify(tractData)}
+              key={`tract-data-${tractData ? tractData.features.length : 0}-${countyGEOID}-${Date.now()}`}
             />
         )}
       </MapContainer>

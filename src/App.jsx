@@ -486,13 +486,13 @@ function AppContent() {
       </header>
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
         {currentPage === 'map' ? (
-          <MapDashboard />
+          <MapDashboard key="map-dashboard" />
         ) : currentPage === 'database' ? (
           <DataManagementPage />
         ) : currentPage === 'about' ? (
           <AboutPage />
         ) : (
-          <MapDashboard />
+          <MapDashboard key="map-dashboard" />
         )}
       </div>
       <LoginModal />

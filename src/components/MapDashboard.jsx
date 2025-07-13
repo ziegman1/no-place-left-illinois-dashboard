@@ -18,6 +18,7 @@ function MapDashboard() {
   const [tractPopulationsByCounty, setTractPopulationsByCounty] = useState({});
   const [coordinator, setCoordinator] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dataRefreshTrigger, setDataRefreshTrigger] = useState(0);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -33,11 +34,11 @@ function MapDashboard() {
     if (user && token) {
       fetchDiscipleMakersData();
     }
-  }, [user, token]);
+  }, [user, token, dataRefreshTrigger]);
 
   // Refresh data when changes are made
   const refreshData = () => {
-    fetchDiscipleMakersData();
+    setDataRefreshTrigger(prev => prev + 1);
   };
 
   // Listen for data change events from other components
@@ -51,6 +52,13 @@ function MapDashboard() {
       window.removeEventListener('dataChanged', handleDataChange);
     };
   }, []);
+
+  // Force refresh when component mounts (for page switching)
+  useEffect(() => {
+    if (user && token) {
+      fetchDiscipleMakersData();
+    }
+  }, []); // Empty dependency array means this runs once when component mounts
 
   const fetchDiscipleMakersData = async () => {
     try {

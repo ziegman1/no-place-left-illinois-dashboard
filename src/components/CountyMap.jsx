@@ -41,6 +41,21 @@ function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMa
     fetchData();
   }, [stateConfig.countiesFile]);
 
+  // Force refresh when component mounts (for page switching)
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        console.log("Force refreshing counties from:", stateConfig.countiesFile);
+        const res = await axios.get(stateConfig.countiesFile);
+        console.log("County data refreshed:", res.data);
+        setCountyData(res.data);
+      } catch (err) {
+        console.error("Failed to refresh counties GeoJSON", err);
+      }
+    }
+    fetchData();
+  }, []); // Empty dependency array means this runs once when component mounts
+
   function getCountyInfo(feature) {
     const name = feature.properties.NAME || feature.properties.name;
     let population;
@@ -219,7 +234,7 @@ function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMa
               onEachFeature={onEachFeature} 
               ref={geoJsonLayerRef}
               onAdd={() => console.log("GeoJSON layer added with data:", countyData)}
-              key={JSON.stringify(countyData)}
+              key={`county-data-${countyData ? Object.keys(countyData).length : 0}-${Date.now()}`}
             />
         )}
       </MapContainer>
