@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../App";
 import axios from "axios";
+import { getApiUrl } from "../utils/api";
 
 function DataManagementPage() {
   const { user, token } = useAuth();
@@ -12,7 +13,7 @@ function DataManagementPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState("");
 
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = getApiUrl();
 
   useEffect(() => {
     if (user && token) {

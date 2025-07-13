@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../App";
+import { getApiUrl } from "../utils/api";
 
 function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
   const { token } = useAuth();
@@ -11,7 +12,7 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = getApiUrl();
 
   useEffect(() => {
     if (county && isOpen) {

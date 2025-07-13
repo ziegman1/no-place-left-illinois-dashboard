@@ -4,6 +4,7 @@ import TractMap from "./TractMap";
 import HoverInfoBox from "./HoverInfoBox";
 import axios from "axios";
 import { useAuth } from "../App";
+import { getApiUrl } from "../utils/api";
 
 function MapDashboard() {
   const { user, token } = useAuth();
@@ -20,7 +21,7 @@ function MapDashboard() {
   const [loading, setLoading] = useState(true);
   const [dataRefreshTrigger, setDataRefreshTrigger] = useState(0);
 
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = getApiUrl();
 
   // Default state config for Illinois
   const stateConfig = {

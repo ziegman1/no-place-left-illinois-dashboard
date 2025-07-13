@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../App";
 import axios from "axios";
+import { getApiUrl } from "../utils/api";
 
 function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
   const { user } = useAuth();
@@ -65,7 +66,7 @@ function TractDetailModal({ tract, isOpen, onClose, onDataUpdate }) {
         };
       }
 
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = getApiUrl();
       const response = await axios.post(`${API_URL}/api/tract/update`, updateData, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });

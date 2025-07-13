@@ -4,6 +4,8 @@ import DataManagementPage from "./components/DataManagementPage";
 import AboutPage from "./components/AboutPage";
 import "./App.css";
 import axios from "axios";
+import jwt_decode from "jwt-decode";
+import { getApiUrl } from "./utils/api";
 
 const COUNTY_NAMES = {
   '001': 'Adams', '003': 'Alexander', '005': 'Bond', '007': 'Boone', '009': 'Brown',
@@ -51,7 +53,7 @@ function AuthProvider({ children }) {
         return;
       }
       try {
-        const API_URL = import.meta.env.VITE_API_URL;
+        const API_URL = getApiUrl();
         const res = await axios.get(`${API_URL}/api/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -73,7 +75,7 @@ function AuthProvider({ children }) {
   }, [token]);
 
   const login = async (email, password) => {
-    const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL = getApiUrl();
     const res = await axios.post(`${API_URL}/api/login`, { email, password });
     if (res.data.mustResetPassword) {
       setMustResetPassword(true);
@@ -96,7 +98,7 @@ function AuthProvider({ children }) {
   };
 
   const forcePasswordReset = async (email, newPassword) => {
-    const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL = getApiUrl();
     const res = await axios.post(`${API_URL}/api/force-password-reset`, { email, newPassword });
     setMustResetPassword(false);
     setPendingEmail("");
@@ -109,13 +111,13 @@ function AuthProvider({ children }) {
   };
 
   const requestPasswordReset = async (email) => {
-    const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL = getApiUrl();
     const res = await axios.post(`${API_URL}/api/request-password-reset`, { email });
     return res.data;
   };
 
   const confirmPasswordReset = async (email, resetCode, newPassword) => {
-    const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL = getApiUrl();
     const res = await axios.post(`${API_URL}/api/confirm-password-reset`, { email, resetCode, newPassword });
     return res.data;
   };
@@ -219,7 +221,7 @@ function ForgotPasswordModal() {
     setSuccess("");
     setLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = getApiUrl();
       await requestPasswordReset(email);
       setStep("confirm");
       setSuccess("Reset code sent to your email. Please check your inbox.");
@@ -242,7 +244,7 @@ function ForgotPasswordModal() {
     }
     setLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      const API_URL = getApiUrl();
       await confirmPasswordReset(email, resetCode, newPassword);
       setSuccess("Password reset successfully! You can now log in with your new password.");
       setTimeout(() => {
@@ -435,7 +437,7 @@ function ForcePasswordResetModal() {
               return;
             }
             try {
-              const API_URL = import.meta.env.VITE_API_URL;
+              const API_URL = getApiUrl();
               await forcePasswordReset(pendingEmail, newPassword);
               setSuccess(true);
             } catch (err) {
