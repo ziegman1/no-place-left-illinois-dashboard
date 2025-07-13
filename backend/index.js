@@ -138,7 +138,10 @@ app.use(cors({
       'https://no-place-left-illinois-dashboard.netlify.app',
       'https://no-place-left-illinois-frontend.netlify.app',
       'https://no-place-left-illinois-dashboard.vercel.app',
-      'https://no-place-left-illinois-frontend.vercel.app'
+      'https://no-place-left-illinois-frontend.vercel.app',
+      'https://www.noplaceleftillinois.org',
+      'https://noplaceleftillinois.org',
+      'https://*.vercel.app'
     ];
     
     if (allowedOrigins.indexOf(origin) !== -1) {
