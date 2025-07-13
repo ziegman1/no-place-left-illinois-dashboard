@@ -43,7 +43,13 @@ function DataManagementPage() {
       });
       setData(response.data);
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to fetch data");
+      if (err.response?.status === 401) {
+        setError("Authentication required. Please log in to access the Data Management Dashboard.");
+      } else if (err.response?.status === 403) {
+        setError("Access denied. You don't have permission to view this data.");
+      } else {
+        setError(err.response?.data?.error || "Failed to fetch data. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -177,19 +183,37 @@ function DataManagementPage() {
       <div style={{ padding: "2rem", textAlign: "center" }}>
         <h2>Error</h2>
         <p style={{ color: "red" }}>{error}</p>
-        <button 
-          onClick={fetchData}
-          style={{
-            padding: "0.5rem 1rem",
-            background: "#222",
-            color: "#fff",
-            border: "none",
-            borderRadius: 4,
-            cursor: "pointer"
-          }}
-        >
-          Retry
-        </button>
+        <div style={{ marginTop: "1rem" }}>
+          <button 
+            onClick={fetchData}
+            style={{
+              padding: "0.5rem 1rem",
+              background: "#222",
+              color: "#fff",
+              border: "none",
+              borderRadius: 4,
+              cursor: "pointer",
+              marginRight: "0.5rem"
+            }}
+          >
+            Retry
+          </button>
+          {error.includes("Authentication required") && (
+            <button 
+              onClick={() => window.location.reload()}
+              style={{
+                padding: "0.5rem 1rem",
+                background: "#007bff",
+                color: "#fff",
+                border: "none",
+                borderRadius: 4,
+                cursor: "pointer"
+              }}
+            >
+              Go to Login
+            </button>
+          )}
+        </div>
       </div>
     );
   }
