@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const setupTestUser = require('./setup');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -1393,4 +1394,6 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Auth server running on port ${PORT}`);
+  // Setup test user if it doesn't exist
+  setupTestUser();
 }); 
