@@ -339,6 +339,7 @@ function MapDashboard() {
               onTractHover={handleTractHover}
               onTractClick={handleTractClick}
               tractDiscipleMakers={tractDiscipleMakers}
+              tractData={tractData}
               setTractDiscipleMakers={handleTractDiscipleMakersChange}
               onDataRefresh={refreshData}
             />

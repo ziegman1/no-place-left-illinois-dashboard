@@ -6,7 +6,7 @@ import * as d3 from "d3";
 import { useAuth } from "../App";
 import TractDetailModal from "./TractDetailModal";
 
-function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers, setTractDiscipleMakers, onDataRefresh }) {
+function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers, tractData: fullTractData, setTractDiscipleMakers, onDataRefresh }) {
   const [tractData, setTractData] = useState(null);
   const [mapCenter, setMapCenter] = useState([40.0, -89.0]);
   const geoJsonLayerRef = useRef();
@@ -129,6 +129,12 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
     const tractId = tractCe; // Use the tract code as is for the map
     const population = feature.properties.POP_2020 || feature.properties.population || feature.properties.POPULATION || feature.properties.POP2010 || 0;
     const discipleCount = tractDiscipleMakers[tractId] || 0;
+    
+    // Get full tract data including simpleChurches and legacyChurches
+    const tractInfo = fullTractData[tractId] || {};
+    const simpleChurches = tractInfo.simpleChurches || 0;
+    const legacyChurches = tractInfo.legacyChurches || 0;
+    
     let peopleFarFromGod = 0;
     let percentFarFromGod = 0;
     if (population && population > 0) {
@@ -141,8 +147,8 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
       population,
       percentFarFromGod,
       peopleFarFromGod: Math.round(peopleFarFromGod),
-      simpleChurches: 0,
-      legacyChurches: 0,
+      simpleChurches,
+      legacyChurches,
       discipleMakers: discipleCount,
     };
   }
@@ -245,7 +251,7 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
     });
   }
 
-  // Redraw colors and highlight if discipleMakers or selectedTractId changes
+  // Redraw colors and highlight if discipleMakers, tractData, or selectedTractId changes
   useEffect(() => {
     if (!geoJsonLayerRef.current) return;
     geoJsonLayerRef.current.eachLayer((layer) => {
@@ -261,7 +267,7 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
         });
       }
     });
-  }, [tractDiscipleMakers, selectedTractId]);
+  }, [tractDiscipleMakers, fullTractData, selectedTractId]);
 
   return (
     <>
@@ -298,10 +304,12 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
             ...prev,
             [tractId]: updatedData.discipleMakers
           }));
-          // Refresh data from backend
+          // Refresh data from backend to update all components
           if (onDataRefresh) {
             onDataRefresh();
           }
+          // Dispatch event to notify other components
+          window.dispatchEvent(new Event('dataChanged'));
           // Close the modal
           setShowDetailModal(false);
           setSelectedTract(null);
