@@ -20,6 +20,20 @@ function DataManagementPage() {
     }
   }, [user, token]);
 
+  // Listen for data change events from other components
+  useEffect(() => {
+    const handleDataChange = () => {
+      if (user && token) {
+        fetchData();
+      }
+    };
+
+    window.addEventListener('dataChanged', handleDataChange);
+    return () => {
+      window.removeEventListener('dataChanged', handleDataChange);
+    };
+  }, [user, token]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
