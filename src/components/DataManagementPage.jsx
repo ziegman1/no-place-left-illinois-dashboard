@@ -112,6 +112,12 @@ function DataManagementPage() {
           >
             Tract Data
           </button>
+          <button
+            onClick={() => setActiveTab('admin')}
+            className={`tab-button ${activeTab === 'admin' ? 'active' : ''}`}
+          >
+            Admin
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -237,6 +243,75 @@ function DataManagementPage() {
                   )}
                 </div>
               )}
+            </div>
+          )}
+          
+          {activeTab === 'admin' && (
+            <div>
+              <h2>Administrative Functions</h2>
+              <p>
+                Administrative functions for managing data. These actions cannot be undone.
+              </p>
+              
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '2rem' }}>
+                <button 
+                  onClick={async () => {
+                    if (window.confirm('Are you sure you want to clear all tract data? This action cannot be undone.')) {
+                      try {
+                        const API_URL = getApiUrl();
+                        const token = localStorage.getItem("token");
+                        await axios.delete(`${API_URL}/api/tract-data/clear`, {
+                          headers: { Authorization: `Bearer ${token}` }
+                        });
+                        alert('All tract data cleared successfully');
+                        fetchTractData(); // Refresh the data
+                      } catch (err) {
+                        alert('Failed to clear tract data: ' + (err.response?.data?.error || err.message));
+                      }
+                    }
+                  }}
+                  style={{
+                    padding: '1rem 2rem',
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '1rem'
+                  }}
+                >
+                  Clear All Tract Data
+                </button>
+                
+                <button 
+                  onClick={async () => {
+                    if (window.confirm('Are you sure you want to clear all coordinators? This action cannot be undone.')) {
+                      try {
+                        const API_URL = getApiUrl();
+                        const token = localStorage.getItem("token");
+                        await axios.delete(`${API_URL}/api/coordinators/clear`, {
+                          headers: { Authorization: `Bearer ${token}` }
+                        });
+                        alert('All coordinators cleared successfully');
+                        fetchCoordinators(); // Refresh the data
+                      } catch (err) {
+                        alert('Failed to clear coordinators: ' + (err.response?.data?.error || err.message));
+                      }
+                    }
+                  }}
+                  style={{
+                    padding: '1rem 2rem',
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '1rem'
+                  }}
+                >
+                  Clear All Coordinators
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -205,12 +205,20 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS tract_data (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tract_id TEXT UNIQUE,
+    population INTEGER DEFAULT 0,
     disciple_makers INTEGER DEFAULT 0,
     simple_churches INTEGER DEFAULT 0,
     legacy_churches INTEGER DEFAULT 0,
+    countyfp TEXT,
     updated_at DATETIME,
     updated_by TEXT
   )`);
+  
+  // Add population column if it doesn't exist
+  db.run(`ALTER TABLE tract_data ADD COLUMN population INTEGER DEFAULT 0`);
+  
+  // Add countyfp column if it doesn't exist
+  db.run(`ALTER TABLE tract_data ADD COLUMN countyfp TEXT`);
   
   // County data table
   db.run(`CREATE TABLE IF NOT EXISTS county_data (
@@ -1335,6 +1343,69 @@ app.get('/api/tract-data', requireRole(['state', 'county', 'tract']), (req, res)
     });
     
     res.json(formattedTractData);
+  });
+});
+
+// Update tract data
+app.post('/api/tract-data/update', requireRole(['state', 'county', 'tract']), (req, res) => {
+  const { tractId, population, discipleMakers, simpleChurches, legacyChurches } = req.body;
+  const { email } = req.user;
+  
+  if (!tractId) {
+    return res.status(400).json({ error: 'Tract ID is required' });
+  }
+  
+  const now = new Date().toISOString();
+  
+  db.run(`
+    INSERT OR REPLACE INTO tract_data 
+    (tract_id, population, disciple_makers, simple_churches, legacy_churches, updated_at, updated_by) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `, [tractId, population || 0, discipleMakers || 0, simpleChurches || 0, legacyChurches || 0, now, email], function(err) {
+    if (err) {
+      console.error('Error updating tract data:', err);
+      return res.status(500).json({ error: 'Failed to update tract data' });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Tract data updated successfully',
+      tractId,
+      updatedAt: now,
+      updatedBy: email
+    });
+  });
+});
+
+// Clear all tract data (state coordinators only)
+app.delete('/api/tract-data/clear', requireRole(['state']), (req, res) => {
+  db.run('DELETE FROM tract_data', [], function(err) {
+    if (err) {
+      console.error('Error clearing tract data:', err);
+      return res.status(500).json({ error: 'Failed to clear tract data' });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'All tract data cleared successfully',
+      deletedRows: this.changes
+    });
+  });
+});
+
+// Clear all coordinators except state coordinators
+app.delete('/api/coordinators/clear', requireRole(['state']), (req, res) => {
+  db.run('DELETE FROM users WHERE role IN ("county", "tract")', [], function(err) {
+    if (err) {
+      console.error('Error clearing coordinators:', err);
+      return res.status(500).json({ error: 'Failed to clear coordinators' });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'All coordinators cleared successfully',
+      deletedRows: this.changes
+    });
   });
 });
 
