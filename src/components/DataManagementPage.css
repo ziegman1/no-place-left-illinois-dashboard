@@ -177,6 +177,7 @@
   padding: 12px;
   text-align: left;
   border-bottom: 1px solid #eee;
+  color: #333;
 }
 
 .coordinators-table th,
@@ -184,6 +185,12 @@
   background-color: #f8f9fa;
   font-weight: 600;
   color: #333;
+}
+
+.coordinators-table td,
+.tract-data-table td {
+  color: #333;
+  background-color: white;
 }
 
 .coordinators-table tr:hover,
@@ -310,6 +317,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: #333;
   }
   
   .coordinators-table th:first-child,
