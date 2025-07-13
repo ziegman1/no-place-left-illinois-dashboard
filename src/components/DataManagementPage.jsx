@@ -181,16 +181,16 @@ function DataManagementPage() {
   }
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
+    <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto", color: "#000" }}>
       <div style={{ marginBottom: "2rem" }}>
-        <h1>Data Management Dashboard</h1>
+        <h1 style={{ color: "#000" }}>Data Management Dashboard</h1>
         <div style={{ 
           background: "#f5f5f5", 
           padding: "1rem", 
           borderRadius: 8, 
           marginBottom: "1rem" 
         }}>
-          <h3 style={{ margin: "0 0 0.5rem 0" }}>{getRoleDisplay()}</h3>
+          <h3 style={{ margin: "0 0 0.5rem 0", color: "#000" }}>{getRoleDisplay()}</h3>
           <p style={{ margin: 0, color: "#666" }}>{getScopeDescription()}</p>
         </div>
         {success && (
@@ -209,7 +209,7 @@ function DataManagementPage() {
       {/* Coordinators Section */}
       {data?.coordinators && data.coordinators.length > 0 && (
         <div style={{ marginBottom: "2rem" }}>
-          <h2>Coordinators</h2>
+          <h2 style={{ color: "#000" }}>Coordinators</h2>
           <div style={{ 
             background: "#fff", 
             border: "1px solid #ddd", 
@@ -219,22 +219,22 @@ function DataManagementPage() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#f8f9fa" }}>
-                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd", color: "#000" }}>
                     Title
                   </th>
-                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd", color: "#000" }}>
                     Name
                   </th>
-                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd", color: "#000" }}>
                     Email
                   </th>
-                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd", color: "#000" }}>
                     County
                   </th>
-                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd", color: "#000" }}>
                     Tract
                   </th>
-                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd", color: "#000" }}>
                     Actions
                   </th>
                 </tr>
@@ -263,7 +263,7 @@ function DataManagementPage() {
       {/* Tract Data Section */}
       {data?.tractData && data.tractData.length > 0 && (
         <div>
-          <h2>Tract Data</h2>
+          <h2 style={{ color: "#000" }}>Tract Data</h2>
           <div style={{ 
             background: "#fff", 
             border: "1px solid #ddd", 
@@ -273,22 +273,22 @@ function DataManagementPage() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#f8f9fa" }}>
-                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd", color: "#000" }}>
                     Tract ID
                   </th>
-                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd", color: "#000" }}>
                     Disciple Makers
                   </th>
-                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd", color: "#000" }}>
                     Simple Churches
                   </th>
-                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd", color: "#000" }}>
                     Legacy Churches
                   </th>
-                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd", color: "#000" }}>
                     Last Updated
                   </th>
-                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd" }}>
+                  <th style={{ padding: "1rem", textAlign: "left", borderBottom: "1px solid #ddd", color: "#000" }}>
                     Actions
                   </th>
                 </tr>
@@ -321,8 +321,8 @@ function DataManagementPage() {
           borderRadius: 8,
           border: "1px solid #ddd"
         }}>
-          <h3>No tract data available</h3>
-          <p>There is no tract data to display for your current scope.</p>
+          <h3 style={{ color: "#000" }}>No tract data available</h3>
+          <p style={{ color: "#000" }}>There is no tract data to display for your current scope.</p>
         </div>
       )}
     </div>
@@ -352,7 +352,7 @@ function TractRow({ tract, isEditing, onEdit, onCancel, onSave, saving, userRole
   if (isEditing) {
     return (
       <tr style={{ background: "#fff3cd" }}>
-        <td style={{ padding: "1rem" }}>{tract.tract_id}</td>
+        <td style={{ padding: "1rem", color: "#000" }}>{tract.tract_id}</td>
         <td style={{ padding: "1rem" }}>
           <input
             type="number"
@@ -395,7 +395,7 @@ function TractRow({ tract, isEditing, onEdit, onCancel, onSave, saving, userRole
             }}
           />
         </td>
-        <td style={{ padding: "1rem" }}>{formatDate(tract.updated_at)}</td>
+        <td style={{ padding: "1rem", color: "#000" }}>{formatDate(tract.updated_at)}</td>
         <td style={{ padding: "1rem" }}>
           <button
             onClick={handleSave}
@@ -433,11 +433,11 @@ function TractRow({ tract, isEditing, onEdit, onCancel, onSave, saving, userRole
 
   return (
     <tr style={{ borderBottom: "1px solid #eee" }}>
-      <td style={{ padding: "1rem" }}>{tract.tract_id}</td>
-      <td style={{ padding: "1rem" }}>{tract.disciple_makers || 0}</td>
-      <td style={{ padding: "1rem" }}>{tract.simple_churches || 0}</td>
-      <td style={{ padding: "1rem" }}>{tract.legacy_churches || 0}</td>
-      <td style={{ padding: "1rem" }}>{formatDate(tract.updated_at)}</td>
+      <td style={{ padding: "1rem", color: "#000" }}>{tract.tract_id}</td>
+      <td style={{ padding: "1rem", color: "#000" }}>{tract.disciple_makers || 0}</td>
+      <td style={{ padding: "1rem", color: "#000" }}>{tract.simple_churches || 0}</td>
+      <td style={{ padding: "1rem", color: "#000" }}>{tract.legacy_churches || 0}</td>
+      <td style={{ padding: "1rem", color: "#000" }}>{formatDate(tract.updated_at)}</td>
       <td style={{ padding: "1rem" }}>
         {canEdit && (
           <button
@@ -476,7 +476,7 @@ function CoordinatorRow({ coordinator, isEditing, onEdit, onCancel, onSave, onDe
   if (isEditing) {
     return (
       <tr style={{ background: "#fff3cd" }}>
-        <td style={{ padding: "1rem" }}>{coordinator.role_display}</td>
+        <td style={{ padding: "1rem", color: "#000" }}>{coordinator.role_display}</td>
         <td style={{ padding: "1rem" }}>
           <input
             type="text"
@@ -518,8 +518,8 @@ function CoordinatorRow({ coordinator, isEditing, onEdit, onCancel, onSave, onDe
             placeholder="Email"
           />
         </td>
-        <td style={{ padding: "1rem" }}>{coordinator.county_name || 'N/A'}</td>
-        <td style={{ padding: "1rem" }}>{coordinator.tractid || "N/A"}</td>
+        <td style={{ padding: "1rem", color: "#000" }}>{coordinator.county_name || 'N/A'}</td>
+        <td style={{ padding: "1rem", color: "#000" }}>{coordinator.tractid || "N/A"}</td>
         <td style={{ padding: "1rem" }}>
           <button
             onClick={handleSave}
@@ -557,11 +557,11 @@ function CoordinatorRow({ coordinator, isEditing, onEdit, onCancel, onSave, onDe
 
   return (
     <tr style={{ borderBottom: "1px solid #eee" }}>
-      <td style={{ padding: "1rem" }}>{coordinator.role_display}</td>
-      <td style={{ padding: "1rem" }}>{`${coordinator.first_name || ''} ${coordinator.last_name || ''}`.trim()}</td>
-      <td style={{ padding: "1rem" }}>{coordinator.email}</td>
-      <td style={{ padding: "1rem" }}>{coordinator.county_name || 'N/A'}</td>
-      <td style={{ padding: "1rem" }}>{coordinator.tractid || "N/A"}</td>
+      <td style={{ padding: "1rem", color: "#000" }}>{coordinator.role_display}</td>
+      <td style={{ padding: "1rem", color: "#000" }}>{`${coordinator.first_name || ''} ${coordinator.last_name || ''}`.trim()}</td>
+      <td style={{ padding: "1rem", color: "#000" }}>{coordinator.email}</td>
+      <td style={{ padding: "1rem", color: "#000" }}>{coordinator.county_name || 'N/A'}</td>
+      <td style={{ padding: "1rem", color: "#000" }}>{coordinator.tractid || "N/A"}</td>
       <td style={{ padding: "1rem" }}>
         <div style={{ display: "flex", gap: "8px" }}>
           {canEdit && (
