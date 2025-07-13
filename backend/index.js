@@ -798,6 +798,76 @@ app.post('/api/county/assign-coordinator', requireRole(['state']), (req, res) =>
   });
 });
 
+// Assign or update tract coordinator
+app.post('/api/tract/assign-coordinator', requireRole(['state', 'county']), (req, res) => {
+  const { countyfp, tractid, name, email } = req.body;
+  if (!countyfp || !tractid || !name || !email) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  
+  // Check permissions - county coordinators can only assign tract coordinators in their county
+  if (req.user.role === 'county' && req.user.countyfp !== countyfp) {
+    return res.status(403).json({ error: 'You can only assign tract coordinators in your county' });
+  }
+  
+  // Split name into first and last name
+  const nameParts = name.trim().split(' ');
+  const first_name = nameParts[0] || '';
+  const last_name = nameParts.slice(1).join(' ') || '';
+  
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, existingUser) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (existingUser) {
+      // For existing users, create a new role assignment instead of updating
+      // This allows multiple role assignments per user
+      db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp, tractid, first_name, last_name) VALUES (?, ?, 0, "tract", ?, ?, ?, ?)', 
+        [email, existingUser.password_hash, countyfp, tractid, first_name, last_name], function(err) {
+        if (err) {
+          // If insert fails (e.g., duplicate), try to update existing tract assignment
+          db.run('UPDATE users SET countyfp = ?, tractid = ?, first_name = ?, last_name = ? WHERE email = ? AND role = "tract"', 
+            [countyfp, tractid, first_name, last_name, email], function(updateErr) {
+            if (updateErr) return res.status(500).json({ error: 'Failed to assign coordinator' });
+            sendWelcomeEmail(email, name, tractid, 'tract')
+              .then(() => {
+                res.json({ success: true, message: 'Coordinator assigned and welcome email sent' });
+              })
+              .catch((err) => {
+                console.error('Failed to send welcome email:', err);
+                res.json({ success: true, message: 'Coordinator assigned (email failed)' });
+              });
+          });
+        } else {
+          sendWelcomeEmail(email, name, tractid, 'tract')
+            .then(() => {
+              res.json({ success: true, message: 'Coordinator assigned and welcome email sent' });
+            })
+            .catch((err) => {
+              console.error('Failed to send welcome email:', err);
+              res.json({ success: true, message: 'Coordinator assigned (email failed)' });
+            });
+        }
+      });
+    } else {
+      // Create new user
+      bcrypt.hash('#NPLIL', 10, (err, hash) => {
+        if (err) return res.status(500).json({ error: 'Failed to hash password' });
+        db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp, tractid, first_name, last_name) VALUES (?, ?, 1, "tract", ?, ?, ?, ?)', 
+          [email, hash, countyfp, tractid, first_name, last_name], function(err) {
+          if (err) return res.status(500).json({ error: 'Failed to create coordinator account' });
+          sendWelcomeEmail(email, name, tractid, 'tract')
+            .then(() => {
+              res.json({ success: true, message: 'Coordinator assigned and welcome email sent' });
+            })
+            .catch((err) => {
+              console.error('Failed to send welcome email:', err);
+              res.json({ success: true, message: 'Coordinator assigned (email failed)' });
+            });
+        });
+      });
+    }
+  });
+});
+
 // Get hierarchical data based on coordinator role
 app.get('/api/coordinator/data', requireRole(['state', 'county', 'tract']), (req, res) => {
   const { role, countyfp, tractid } = req.user;
