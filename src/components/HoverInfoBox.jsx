@@ -232,6 +232,28 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
         )}
         <li>
           <b>Coordinator:</b> {coordinator || "Needed"}
+          {!isTract && user && user.role === "state" && (
+            <button
+              onClick={() => {
+                // Trigger coordinator assignment modal
+                window.dispatchEvent(new CustomEvent('openCoordinatorModal', {
+                  detail: { countyfp: info.countyfp, countyName: info.name }
+                }));
+              }}
+              style={{
+                marginLeft: 8,
+                padding: "4px 8px",
+                backgroundColor: "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px"
+              }}
+            >
+              {coordinator ? "Change" : "Assign"}
+            </button>
+          )}
         </li>
         <li>
           <b>Disciple-Makers:</b>

@@ -6,6 +6,7 @@ import HoverInfoBox from "./HoverInfoBox";
 import axios from "axios";
 import { useAuth } from "../App";
 import { getApiUrl } from "../utils/api";
+import CountyEditModal from "./CountyEditModal";
 
 function MapDashboard() {
   const [selectedCounty, setSelectedCounty] = useState(null);
@@ -16,6 +17,9 @@ function MapDashboard() {
   const [tractPopulationsByCounty, setTractPopulationsByCounty] = useState({});
   const [countyMetrics, setCountyMetrics] = useState({});
   const [coordinator, setCoordinator] = useState(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [showCoordinatorModal, setShowCoordinatorModal] = useState(false);
+  const [selectedCountyForCoordinator, setSelectedCountyForCoordinator] = useState(null);
   const [countyName, setCountyName] = useState(null);
   const { user } = useAuth();
 
@@ -35,8 +39,17 @@ function MapDashboard() {
     
     window.addEventListener('dataChanged', handleDataChange);
     
+    // Add event listener for coordinator modal
+    const handleCoordinatorModal = (event) => {
+      setSelectedCountyForCoordinator(event.detail);
+      setShowCoordinatorModal(true);
+    };
+    
+    window.addEventListener('openCoordinatorModal', handleCoordinatorModal);
+
     return () => {
       window.removeEventListener('dataChanged', handleDataChange);
+      window.removeEventListener('openCoordinatorModal', handleCoordinatorModal);
     };
   }, []);
 
@@ -138,6 +151,12 @@ function MapDashboard() {
     }
   };
 
+  const handleMouseMove = (event) => {
+    if (hoverInfo) {
+      setMousePosition({ x: event.clientX, y: event.clientY });
+    }
+  };
+
   const handleCountyClick = (info) => {
     setSelectedCounty(info);
   };
@@ -198,7 +217,7 @@ function MapDashboard() {
   };
 
   return (
-    <div className="map-dashboard-container">
+    <div className="map-dashboard-container" onMouseMove={handleMouseMove}>
       <h1 className="map-dashboard-title">
         Illinois Map Dashboard
       </h1>
@@ -225,26 +244,56 @@ function MapDashboard() {
           />
         )}
         
-        <div className="map-info-panel">
-          <HoverInfoBox
-            info={hoverInfo}
-            setDiscipleMakers={handleDiscipleMakersChange}
-            tractPopulationsByCounty={tractPopulationsByCounty}
-            countyMetrics={countyMetrics}
-            coordinator={coordinator}
-            countyName={countyName}
-            onDataUpdate={handleDataUpdate}
-          />
-          {selectedCounty && (
-            <button
-              onClick={() => setSelectedCounty(null)}
-              className="back-to-counties-button"
-            >
-              ← Back to Counties
-            </button>
-          )}
-        </div>
+        {hoverInfo && (
+          <div 
+            className="map-info-panel"
+            style={{
+              position: 'fixed',
+              top: Math.min(mousePosition.y + 10, window.innerHeight - 400),
+              left: Math.min(mousePosition.x + 10, window.innerWidth - 320),
+              zIndex: 1000
+            }}
+          >
+            <HoverInfoBox
+              info={hoverInfo}
+              setDiscipleMakers={handleDiscipleMakersChange}
+              tractPopulationsByCounty={tractPopulationsByCounty}
+              countyMetrics={countyMetrics}
+              coordinator={coordinator}
+              countyName={countyName}
+              onDataUpdate={handleDataUpdate}
+            />
+          </div>
+        )}
+        
+        {selectedCounty && (
+          <button
+            onClick={() => setSelectedCounty(null)}
+            className="back-to-counties-button"
+          >
+            ← Back to Counties
+          </button>
+        )}
       </div>
+      
+      {showCoordinatorModal && selectedCountyForCoordinator && (
+        <CountyEditModal
+          county={selectedCountyForCoordinator}
+          onClose={() => {
+            setShowCoordinatorModal(false);
+            setSelectedCountyForCoordinator(null);
+            // Refresh coordinator data
+            if (hoverInfo && hoverInfo.countyfp) {
+              const API_URL = getApiUrl();
+              axios.get(`${API_URL}/api/coordinator/county/${hoverInfo.countyfp}`, {
+                headers: { Authorization: `Bearer ${user.token}` }
+              })
+                .then(res => setCoordinator(res.data.coordinator?.name || null))
+                .catch(() => setCoordinator(null));
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
