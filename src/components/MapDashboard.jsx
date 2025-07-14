@@ -14,6 +14,7 @@ function MapDashboard() {
   const [tractDiscipleMakers, setTractDiscipleMakers] = useState({});
   const [tractData, setTractData] = useState({});
   const [tractPopulationsByCounty, setTractPopulationsByCounty] = useState({});
+  const [countyMetrics, setCountyMetrics] = useState({});
   const [coordinator, setCoordinator] = useState(null);
   const [countyName, setCountyName] = useState(null);
   const { user } = useAuth();
@@ -55,13 +56,35 @@ function MapDashboard() {
       
       // Calculate tract populations by county
       const populations = {};
+      // Calculate county-level disciple-making metrics as sums of all tracts
+      const countyMetrics = {};
+      
       Object.keys(tractRes.data).forEach(tractId => {
         const tract = tractRes.data[tractId];
-        if (tract.countyfp && tract.population) {
+        if (tract.countyfp) {
           if (!populations[tract.countyfp]) {
             populations[tract.countyfp] = 0;
           }
-          populations[tract.countyfp] += tract.population;
+          if (!countyMetrics[tract.countyfp]) {
+            countyMetrics[tract.countyfp] = {
+              discipleMakers: 0,
+              simpleChurches: 0,
+              legacyChurches: 0
+            };
+          }
+          
+          if (tract.population) {
+            populations[tract.countyfp] += tract.population;
+          }
+          if (tract.discipleMakers) {
+            countyMetrics[tract.countyfp].discipleMakers += tract.discipleMakers;
+          }
+          if (tract.simpleChurches) {
+            countyMetrics[tract.countyfp].simpleChurches += tract.simpleChurches;
+          }
+          if (tract.legacyChurches) {
+            countyMetrics[tract.countyfp].legacyChurches += tract.legacyChurches;
+          }
         }
       });
       setTractPopulationsByCounty(populations);
@@ -72,14 +95,32 @@ function MapDashboard() {
         tractDiscipleData[tractId] = tractRes.data[tractId].discipleMakers || 0;
       });
       setTractDiscipleMakers(tractDiscipleData);
+      
+      // Update discipleMakers state with county-level sums
+      const countyDiscipleMakers = {};
+      Object.keys(countyMetrics).forEach(countyfp => {
+        countyDiscipleMakers[countyfp] = countyMetrics[countyfp].discipleMakers;
+      });
+      setDiscipleMakers(countyDiscipleMakers);
+      
+      // Store county metrics for hover info
+      setCountyMetrics(countyMetrics);
     } catch (err) {
       console.error("Failed to fetch data:", err);
     }
   };
 
   const handleCountyHover = (info) => {
-    setHoverInfo(info);
     if (info) {
+      // Add county-level metrics to the hover info
+      const countyData = countyMetrics[info.countyfp] || { discipleMakers: 0, simpleChurches: 0, legacyChurches: 0 };
+      const enhancedInfo = {
+        ...info,
+        discipleMakers: countyData.discipleMakers,
+        simpleChurches: countyData.simpleChurches,
+        legacyChurches: countyData.legacyChurches
+      };
+      setHoverInfo(enhancedInfo);
       setCountyName(info.name);
       // Fetch coordinator for this county
       if (user && user.token) {
@@ -91,6 +132,7 @@ function MapDashboard() {
           .catch(() => setCoordinator(null));
       }
     } else {
+      setHoverInfo(null);
       setCoordinator(null);
       setCountyName(null);
     }
@@ -188,6 +230,7 @@ function MapDashboard() {
             info={hoverInfo}
             setDiscipleMakers={handleDiscipleMakersChange}
             tractPopulationsByCounty={tractPopulationsByCounty}
+            countyMetrics={countyMetrics}
             coordinator={coordinator}
             countyName={countyName}
             onDataUpdate={handleDataUpdate}

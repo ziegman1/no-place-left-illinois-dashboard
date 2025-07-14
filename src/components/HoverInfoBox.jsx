@@ -3,7 +3,7 @@ import { useAuth } from "../App";
 import axios from "axios";
 import { getApiUrl } from "../utils/api";
 
-function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, coordinator, countyName, onDataUpdate }) {
+function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, countyMetrics, coordinator, countyName, onDataUpdate }) {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -45,16 +45,37 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, coord
     tractSum = tractPopulationsByCounty[id];
   }
 
-  const { name, percentFarFromGod, simpleChurches, legacyChurches, discipleMakers = 0 } = info;
+  // Get the correct disciple-making metrics
+  let discipleMakers = info.discipleMakers || 0;
+  let simpleChurches = info.simpleChurches || 0;
+  let legacyChurches = info.legacyChurches || 0;
+
+  // For counties, use the county metrics if available
+  if (!isTract && countyMetrics && info.countyfp && countyMetrics[info.countyfp]) {
+    const countyData = countyMetrics[info.countyfp];
+    discipleMakers = countyData.discipleMakers || 0;
+    simpleChurches = countyData.simpleChurches || 0;
+    legacyChurches = countyData.legacyChurches || 0;
+  }
+
+  const { name, percentFarFromGod } = info;
   const goal = Math.round(0.1 * ((tractSum !== null ? tractSum : population) || 0));
   const progress = goal ? Math.min(1, discipleMakers / goal) : 0;
   
   // Determine edit permissions based on user role and scope
+  // For counties, only allow editing if user is state admin (for coordinator assignment)
+  // For tracts, allow editing based on user role and scope
   const canEdit = user && (
-    user.role === "state" || 
-    (user.role === "county" && !isTract) ||
-    (user.role === "tract" && isTract && user.tractid === info.tractId)
+    (isTract && (
+      user.role === "state" || 
+      (user.role === "county" && !isTract) ||
+      (user.role === "tract" && isTract && user.tractid === info.tractId)
+    )) ||
+    (!isTract && user.role === "state") // Only state users can assign coordinators to counties
   );
+
+  // Only show edit button for tracts, not for counties (coordinator assignment is handled separately)
+  const showEditButton = canEdit && isTract;
 
   const handleSave = async () => {
     if (!canEdit) return;
@@ -121,7 +142,7 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, coord
     <div style={{ color: "#222" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
         <h2>{!isTract ? name : (countyName ? `${countyName} County` : "Tract Details")}</h2>
-        {canEdit && (
+        {showEditButton && (
           <div style={{ display: "flex", gap: "8px" }}>
             {!isEditing ? (
               <button
@@ -214,7 +235,7 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, coord
         </li>
         <li>
           <b>Disciple-Makers:</b>
-          {isEditing && canEdit ? (
+          {isEditing && canEdit && isTract ? (
             <input
               type="number"
               min={0}
@@ -234,13 +255,18 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, coord
           <span style={{ marginLeft: 8 }}>
             (Goal: {goal.toLocaleString()})
           </span>
+          {!isTract && (
+            <span style={{ marginLeft: 8, fontSize: "12px", color: "#666" }}>
+              (sum of all tracts)
+            </span>
+          )}
         </li>
         <li>
           <b>Progress to Goal:</b> {(progress * 100).toFixed(1)}%
         </li>
         <li>
           <b>Simple Churches:</b>
-          {isEditing && canEdit ? (
+          {isEditing && canEdit && isTract ? (
             <input
               type="number"
               min={0}
@@ -257,10 +283,15 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, coord
           ) : (
             <span style={{ marginLeft: 8 }}>{simpleChurches || 0}</span>
           )}
+          {!isTract && (
+            <span style={{ marginLeft: 8, fontSize: "12px", color: "#666" }}>
+              (sum of all tracts)
+            </span>
+          )}
         </li>
         <li>
           <b>Legacy Churches:</b>
-          {isEditing && canEdit ? (
+          {isEditing && canEdit && isTract ? (
             <input
               type="number"
               min={0}
@@ -276,6 +307,11 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, coord
             />
           ) : (
             <span style={{ marginLeft: 8 }}>{legacyChurches || 0}</span>
+          )}
+          {!isTract && (
+            <span style={{ marginLeft: 8, fontSize: "12px", color: "#666" }}>
+              (sum of all tracts)
+            </span>
           )}
         </li>
       </ul>
