@@ -70,7 +70,9 @@ function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMa
     } else {
       population = feature.properties.POP2010;
     }
-    const countyfp = feature.properties.COUNTYFP || feature.properties.countyfp;
+    let countyfp = feature.properties.COUNTYFP || feature.properties.countyfp;
+    // Normalize FIPS to 3-digit string
+    countyfp = countyfp ? countyfp.toString().padStart(3, '0') : '';
     // Use countyMetrics (by FIPS) for metrics, fallback to 0s
     const metrics = (countyMetrics && countyMetrics[countyfp]) || { discipleMakers: 0, simpleChurches: 0, legacyChurches: 0 };
     let peopleFarFromGod = 0;
