@@ -13,6 +13,8 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  // Add a state to track if loading has timed out
+  const [coordinatorTimeout, setCoordinatorTimeout] = useState(false);
 
   // Update edit data when info changes
   useEffect(() => {
@@ -24,6 +26,19 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
       });
     }
   }, [info]);
+
+  useEffect(() => {
+    let timeoutId;
+    if (coordinatorLoading) {
+      setCoordinatorTimeout(false);
+      timeoutId = setTimeout(() => {
+        setCoordinatorTimeout(true);
+      }, 1000); // 1 second timeout
+    } else {
+      setCoordinatorTimeout(false);
+    }
+    return () => clearTimeout(timeoutId);
+  }, [coordinatorLoading]);
 
   if (!info) {
     return (
@@ -108,11 +123,10 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
       if (onDataUpdate) {
         onDataUpdate(id, editData);
       }
-      
-      setIsEditing(false);
-      
-      // Notify other components that data has changed
+      // Always trigger a full data refresh after save
       window.dispatchEvent(new Event('dataChanged'));
+      setIsEditing(false);
+      setError("");
       
     } catch (err) {
       setError(err.response?.data?.error || "Failed to save changes");
@@ -259,7 +273,7 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
         )}
         <li>
           <b>Coordinator:</b> 
-          {coordinatorLoading ? (
+          {coordinatorLoading && !coordinatorTimeout ? (
             <span style={{ marginLeft: 8, color: "#666", fontStyle: "italic" }}>Loading...</span>
           ) : (
             <>
