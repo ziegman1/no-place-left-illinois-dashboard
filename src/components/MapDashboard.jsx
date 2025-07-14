@@ -21,7 +21,7 @@ function MapDashboard() {
   const stateConfig = {
     center: [40.0, -89.0],
     zoom: 7,
-    countiesFile: "/simplified_illinois_counties.geojson"
+    countiesFile: "/illinois_counties_with_population.geojson"
   };
 
   useEffect(() => {

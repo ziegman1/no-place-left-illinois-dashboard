@@ -4,7 +4,7 @@ import MapDashboard from "./components/MapDashboard";
 import DataManagementPage from "./components/DataManagementPage";
 import "./App.css";
 import axios from "axios";
-import jwt_decode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import { getApiUrl } from "./utils/api";
 
 const COUNTY_NAMES = {
