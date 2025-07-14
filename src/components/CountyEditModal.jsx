@@ -4,7 +4,7 @@ import { useAuth } from "../App";
 import { getApiUrl } from "../utils/api";
 
 function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [currentCoordinator, setCurrentCoordinator] = useState(null);
   const [coordinatorName, setCoordinatorName] = useState("");
   const [coordinatorEmail, setCoordinatorEmail] = useState("");
@@ -21,7 +21,7 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
       setError("");
       setSuccess("");
       // Fetch current coordinator
-      if (!token) {
+      if (!user.token) {
         console.log("No token available for fetching current coordinator");
         setCurrentCoordinator(null);
         return;
@@ -29,7 +29,7 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
       
       console.log("Fetching current coordinator for county:", county.countyfp);
       axios.get(`${API_URL}/api/coordinator/county/${county.countyfp}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${user.token}` }
       })
         .then(res => {
           console.log("Current coordinator fetched:", res.data);
@@ -48,20 +48,20 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
     setError("");
     setSuccess("");
     
-    if (!token) {
+    if (!user.token) {
       setError("No authentication token found. Please log in again.");
       setLoading(false);
       return;
     }
     
     try {
-      console.log("Submitting coordinator assignment with token:", token.substring(0, 20) + "...");
+      console.log("Submitting coordinator assignment with token:", user.token.substring(0, 20) + "...");
       const response = await axios.post(`${API_URL}/api/county/assign-coordinator`, {
         countyfp: county.countyfp,
         name: coordinatorName,
         email: coordinatorEmail
       }, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${user.token}` }
       });
       console.log("Assignment successful:", response.data);
       setSuccess("Coordinator assigned and welcome email sent!");

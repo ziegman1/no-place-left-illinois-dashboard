@@ -283,6 +283,7 @@ function MapDashboard() {
       {showCoordinatorModal && selectedCountyForCoordinator && (
         <CountyEditModal
           county={selectedCountyForCoordinator}
+          isOpen={showCoordinatorModal}
           onClose={() => {
             setShowCoordinatorModal(false);
             setSelectedCountyForCoordinator(null);
@@ -295,6 +296,10 @@ function MapDashboard() {
                 .then(res => setCoordinator(res.data.coordinator?.name || null))
                 .catch(() => setCoordinator(null));
             }
+          }}
+          onCoordinatorAssigned={(coordinatorEmail) => {
+            // Update the coordinator display in the hover info
+            setCoordinator(coordinatorEmail);
           }}
         />
       )}
