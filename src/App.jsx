@@ -413,7 +413,7 @@ function AppContent() {
         <div className="header-title">
           #NoPlaceLeft Illinois
         </div>
-        <div className="header-right">
+        <div className="header-right desktop-user-info">
           <UserInfoAndLogout />
         </div>
       </header>
@@ -444,30 +444,158 @@ function AppContent() {
 }
 
 function AuthHeaderControls({ currentPage, setCurrentPage }) {
-  const { user } = useAuth();
+  const { user, logout, setShowLogin } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Function to get role display name
+  const getRoleDisplayName = (role, countyfp, tractid) => {
+    switch (role) {
+      case 'state':
+        return 'Illinois State Coordinator';
+      case 'county':
+        return `${COUNTY_NAMES[countyfp] || 'Unknown'} County Coordinator`;
+      case 'tract':
+        return `Census Tract ${tractid} Coordinator`;
+      default:
+        return role;
+    }
+  };
+  
+  // Function to sort roles by hierarchy (state > county > tract)
+  const sortRolesByHierarchy = (roles) => {
+    const hierarchy = { 'state': 3, 'county': 2, 'tract': 1 };
+    return roles.sort((a, b) => hierarchy[b.role] - hierarchy[a.role]);
+  };
+
+  // Handle clicking outside the mobile menu to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const mobileNav = event.target.closest('.mobile-nav');
+      if (!mobileNav && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    if (isMobileMenuOpen) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isMobileMenuOpen]);
+
+  const handleNavigation = (page) => {
+    setCurrentPage(page);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleLogin = () => {
+    setShowLogin(true);
+    setIsMobileMenuOpen(false);
+  };
   
   return (
-    <div className="nav-buttons">
-      <button 
-        onClick={() => setCurrentPage('about')} 
-        className={`nav-button ${currentPage === 'about' ? 'active' : ''}`}
-      >
-        About
-      </button>
-      <button 
-        onClick={() => setCurrentPage('map')} 
-        className={`nav-button ${currentPage === 'map' ? 'active' : ''}`}
-      >
-        Map
-      </button>
-      {user && (
+    <div className="nav-container">
+      {/* Desktop Navigation */}
+      <div className="nav-buttons desktop-nav">
         <button 
-          onClick={() => setCurrentPage('database')} 
-          className={`nav-button ${currentPage === 'database' ? 'active' : ''}`}
+          onClick={() => setCurrentPage('about')} 
+          className={`nav-button ${currentPage === 'about' ? 'active' : ''}`}
         >
-          Database Management
+          About
         </button>
-      )}
+        <button 
+          onClick={() => setCurrentPage('map')} 
+          className={`nav-button ${currentPage === 'map' ? 'active' : ''}`}
+        >
+          Map
+        </button>
+        {user && (
+          <button 
+            onClick={() => setCurrentPage('database')} 
+            className={`nav-button ${currentPage === 'database' ? 'active' : ''}`}
+          >
+            Database Management
+          </button>
+        )}
+      </div>
+
+      {/* Mobile Hamburger Menu */}
+      <div className="mobile-nav">
+        <button 
+          className="hamburger-button"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          <div className={`hamburger-icon ${isMobileMenuOpen ? 'open' : ''}`}>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </button>
+
+        {/* Mobile Menu Dropdown */}
+        {isMobileMenuOpen && (
+          <div className="mobile-menu-dropdown">
+            <div className="mobile-menu-section">
+              <div className="mobile-menu-title">Navigation</div>
+              <button 
+                onClick={() => handleNavigation('about')} 
+                className={`mobile-menu-item ${currentPage === 'about' ? 'active' : ''}`}
+              >
+                About
+              </button>
+              <button 
+                onClick={() => handleNavigation('map')} 
+                className={`mobile-menu-item ${currentPage === 'map' ? 'active' : ''}`}
+              >
+                Map
+              </button>
+              {user && (
+                <button 
+                  onClick={() => handleNavigation('database')} 
+                  className={`mobile-menu-item ${currentPage === 'database' ? 'active' : ''}`}
+                >
+                  Data Management
+                </button>
+              )}
+            </div>
+
+            <div className="mobile-menu-section">
+              <div className="mobile-menu-title">Account</div>
+              {user ? (
+                <>
+                  <div className="mobile-user-info">
+                    <div className="mobile-user-email">{user.email}</div>
+                    {user.roles && user.roles.length > 0 ? (
+                      <div className="mobile-user-roles">
+                        {sortRolesByHierarchy([...user.roles]).map((role, index) => (
+                          <div key={index}>{getRoleDisplayName(role.role, role.countyfp, role.tractid)}</div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mobile-user-roles">(No roles assigned)</div>
+                    )}
+                  </div>
+                  <button onClick={handleLogout} className="mobile-menu-item logout">
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <button onClick={handleLogin} className="mobile-menu-item">
+                  Login
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
