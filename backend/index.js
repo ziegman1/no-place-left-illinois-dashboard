@@ -1475,7 +1475,7 @@ app.get('/api/tract-data/all', requireRole(['state', 'county', 'tract']), (req, 
             };
           }
         });
-        
+        console.log('DEBUG: /api/tract-data/all keys', Object.keys(allTractData));
         res.json(allTractData);
       } else {
         // Fallback to just manual tract data if GeoJSON not available
@@ -1593,51 +1593,6 @@ app.delete('/api/coordinators/clear', requireRole(['state']), (req, res) => {
       message: 'All coordinators cleared successfully',
       deletedRows: this.changes
     });
-  });
-});
-
-// Get disciple makers data (for map)
-app.get('/api/disciple-makers', (req, res) => {
-  // This endpoint returns county-level disciple makers data
-  // Only include data from tracts that have been manually updated by users
-  db.all('SELECT * FROM tract_data WHERE updated_by IS NOT NULL', [], (err, tractData) => {
-    if (err) return res.status(500).json({ error: 'Database error' });
-    
-    const countyTotals = {};
-    
-    // Initialize all counties with 0 values
-    Object.keys(COUNTY_FIPS_TO_NAME).forEach(countyFips => {
-      countyTotals[COUNTY_FIPS_TO_NAME[countyFips]] = 0;
-    });
-    
-    // Sum tract data into county totals (only for manually updated tracts)
-    tractData.forEach(tract => {
-      // Extract county FIPS from tract ID
-      const tractId = tract.tract_id;
-      let countyFips = null;
-      
-      if (tractId.length === 11) {
-        // Full FIPS code: extract county part (positions 3-5)
-        countyFips = tractId.substring(2, 5);
-      } else if (tractId.length === 6) {
-        // Short tract code: need to map to county
-        if (tractId === '000502') {
-          countyFips = '113'; // McLean County
-        } else if (tractId.startsWith('001')) {
-          countyFips = '001'; // Adams County
-        } else if (tractId.startsWith('003')) {
-          countyFips = '003'; // Alexander County
-        }
-        // Add more mappings as needed
-      }
-      
-      if (countyFips && COUNTY_FIPS_TO_NAME[countyFips]) {
-        const countyName = COUNTY_FIPS_TO_NAME[countyFips];
-        countyTotals[countyName] += tract.disciple_makers || 0;
-      }
-    });
-    
-    res.json(countyTotals);
   });
 });
 

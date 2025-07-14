@@ -78,14 +78,8 @@ function MapDashboard() {
       const token = localStorage.getItem("token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
-      const [discipleRes, tractRes, allTractRes] = await Promise.all([
-        axios.get(`${API_URL}/api/disciple-makers`, { headers }),
-        axios.get(`${API_URL}/api/tract-data`, { headers }),
-        axios.get(`${API_URL}/api/tract-data/all`, { headers })
-      ]);
-      
-      setDiscipleMakers(discipleRes.data);
-      setTractData(tractRes.data);
+      // Only fetch tract data (all tracts, not just manually updated)
+      const allTractRes = await axios.get(`${API_URL}/api/tract-data/all`, { headers });
       
       // Calculate tract populations by county using ALL tract data
       const populations = {};
@@ -116,45 +110,30 @@ function MapDashboard() {
         '191': 'Wayne', '193': 'White', '195': 'Whiteside', '197': 'Will', '199': 'Williamson',
         '201': 'Winnebago', '203': 'Woodford'
       };
-      
+      // Normalize FIPS codes to 3-digit strings
+      function normalizeFips(fips) {
+        return fips ? fips.toString().padStart(3, '0') : '';
+      }
       // Use allTractRes.data for county calculations (includes all tracts with population data)
       Object.keys(allTractRes.data).forEach(tractId => {
         const tract = allTractRes.data[tractId];
-        if (tract.countyfp) {
-          if (!populations[tract.countyfp]) {
-            populations[tract.countyfp] = 0;
-          }
-          if (!countyMetrics[tract.countyfp]) {
-            countyMetrics[tract.countyfp] = {
-              discipleMakers: 0,
-              simpleChurches: 0,
-              legacyChurches: 0
-            };
-          }
-          
-          if (tract.population) {
-            populations[tract.countyfp] += tract.population;
-          }
-          if (tract.discipleMakers) {
-            countyMetrics[tract.countyfp].discipleMakers += tract.discipleMakers;
-          }
-          if (tract.simpleChurches) {
-            countyMetrics[tract.countyfp].simpleChurches += tract.simpleChurches;
-          }
-          if (tract.legacyChurches) {
-            countyMetrics[tract.countyfp].legacyChurches += tract.legacyChurches;
-          }
+        const countyfp = normalizeFips(tract.countyfp);
+        if (countyfp) {
+          if (!populations[countyfp]) populations[countyfp] = 0;
+          if (!countyMetrics[countyfp]) countyMetrics[countyfp] = { discipleMakers: 0, simpleChurches: 0, legacyChurches: 0 };
+          if (tract.population) populations[countyfp] += tract.population;
+          if (tract.discipleMakers) countyMetrics[countyfp].discipleMakers += tract.discipleMakers;
+          if (tract.simpleChurches) countyMetrics[countyfp].simpleChurches += tract.simpleChurches;
+          if (tract.legacyChurches) countyMetrics[countyfp].legacyChurches += tract.legacyChurches;
         }
       });
       setTractPopulationsByCounty(populations);
-      
-      // Set tract disciple makers (use the manually updated tract data for individual tract display)
+      // Set tract disciple makers (use the all tract data for individual tract display)
       const tractDiscipleData = {};
-      Object.keys(tractRes.data).forEach(tractId => {
-        tractDiscipleData[tractId] = tractRes.data[tractId].discipleMakers || 0;
+      Object.keys(allTractRes.data).forEach(tractId => {
+        tractDiscipleData[tractId] = allTractRes.data[tractId].discipleMakers || 0;
       });
       setTractDiscipleMakers(tractDiscipleData);
-      
       // Update discipleMakers state with county-level sums using county names
       const countyDiscipleMakers = {};
       Object.keys(countyMetrics).forEach(countyfp => {
@@ -164,9 +143,10 @@ function MapDashboard() {
         }
       });
       setDiscipleMakers(countyDiscipleMakers);
-      
       // Store county metrics for hover info (keep FIPS codes for hover lookup)
       setCountyMetrics(countyMetrics);
+      // Debug log for FIPS keys and sums
+      console.log('DEBUG: countyMetrics keys', Object.keys(countyMetrics));
     } catch (err) {
       console.error("Failed to fetch data:", err);
     }
@@ -311,6 +291,8 @@ function MapDashboard() {
       </h1>
       
       <div className="map-content-card">
+        {console.log('DEBUG: discipleMakers', discipleMakers)}
+        {console.log('DEBUG: countyMetrics', countyMetrics)}
         {!selectedCounty ? (
           <CountyMap
             onCountyHover={handleCountyHover}
@@ -334,6 +316,7 @@ function MapDashboard() {
         
         {hoverInfo && (
           <div className="map-info-panel">
+            {console.log('DEBUG: hoverInfo', hoverInfo)}
             <HoverInfoBox
               info={hoverInfo}
               setDiscipleMakers={handleDiscipleMakersChange}
