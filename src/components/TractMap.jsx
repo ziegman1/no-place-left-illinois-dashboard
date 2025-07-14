@@ -349,7 +349,9 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
           zIndex: 1000,
           display: 'flex',
           alignItems: 'center',
-          gap: '8px'
+          gap: '8px',
+          maxWidth: 'calc(100vw - 20px)',
+          flexWrap: 'wrap'
         }}>
           <span>🔒 Tract Locked</span>
           <button
@@ -365,7 +367,8 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
               padding: '2px 6px',
               borderRadius: '2px',
               cursor: 'pointer',
-              fontSize: '10px'
+              fontSize: '10px',
+              whiteSpace: 'nowrap'
             }}
           >
             Unlock

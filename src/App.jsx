@@ -406,26 +406,14 @@ function AppContent() {
       flexDirection: "column",
       overflow: "hidden"
     }}>
-      <header style={{ 
-        padding: "0.5rem", 
-        background: "#222", 
-        color: "#fff", 
-        fontSize: "2rem", 
-        textAlign: "center", 
-        display: "flex", 
-        flexDirection: "row", 
-        alignItems: "center", 
-        justifyContent: "space-between", 
-        minHeight: "60px",
-        flexShrink: 0
-      }}>
-        <div style={{ flex: 1, display: "flex", justifyContent: "flex-start", alignItems: "center" }}>
+      <header className="app-header">
+        <div className="header-left">
           <AuthHeaderControls currentPage={currentPage} setCurrentPage={setCurrentPage} />
         </div>
-        <div style={{ fontSize: "2.4rem", fontWeight: "bold", lineHeight: "1", flex: 2, textAlign: "center" }}>
+        <div className="header-title">
           #NoPlaceLeft Illinois
         </div>
-        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+        <div className="header-right">
           <UserInfoAndLogout />
         </div>
       </header>
@@ -459,47 +447,23 @@ function AuthHeaderControls({ currentPage, setCurrentPage }) {
   const { user } = useAuth();
   
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className="nav-buttons">
       <button 
         onClick={() => setCurrentPage('about')} 
-        style={{ 
-          padding: '2px 8px', 
-          background: currentPage === 'about' ? '#fff' : 'transparent', 
-          color: currentPage === 'about' ? '#222' : '#fff', 
-          border: '1px solid #fff', 
-          borderRadius: 4, 
-          cursor: 'pointer',
-          fontSize: '0.75rem'
-        }}
+        className={`nav-button ${currentPage === 'about' ? 'active' : ''}`}
       >
         About
       </button>
       <button 
         onClick={() => setCurrentPage('map')} 
-        style={{ 
-          padding: '2px 8px', 
-          background: currentPage === 'map' ? '#fff' : 'transparent', 
-          color: currentPage === 'map' ? '#222' : '#fff', 
-          border: '1px solid #fff', 
-          borderRadius: 4, 
-          cursor: 'pointer',
-          fontSize: '0.75rem'
-        }}
+        className={`nav-button ${currentPage === 'map' ? 'active' : ''}`}
       >
         Map
       </button>
       {user && (
         <button 
           onClick={() => setCurrentPage('database')} 
-          style={{ 
-            padding: '2px 8px', 
-            background: currentPage === 'database' ? '#fff' : 'transparent', 
-            color: currentPage === 'database' ? '#222' : '#fff', 
-            border: '1px solid #fff', 
-            borderRadius: 4, 
-            cursor: 'pointer',
-            fontSize: '0.75rem'
-          }}
+          className={`nav-button ${currentPage === 'database' ? 'active' : ''}`}
         >
           Database Management
         </button>
@@ -532,26 +496,26 @@ function UserInfoAndLogout() {
   };
   
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className="user-info-container">
       {user && (
         <>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontWeight: 600, fontSize: '0.75rem' }}>{user.email}</div>
+          <div className="user-details">
+            <div className="user-email">{user.email}</div>
             {user.roles && user.roles.length > 0 ? (
-              <div style={{ fontSize: '0.65rem', color: '#ccc', marginTop: 1 }}>
+              <div className="user-roles">
                 {sortRolesByHierarchy([...user.roles]).map((role, index) => (
                   <div key={index}>{getRoleDisplayName(role.role, role.countyfp, role.tractid)}</div>
                 ))}
               </div>
             ) : (
-              <div style={{ fontSize: '0.65rem', color: '#ccc', marginTop: 1 }}>(No roles assigned)</div>
+              <div className="user-roles">(No roles assigned)</div>
             )}
           </div>
-          <button onClick={logout} style={{ height: 18, minWidth: 60, fontSize: '0.75rem', padding: '0 8px', borderRadius: 4, background: '#fff', color: '#222', border: '1px solid #ccc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Logout</button>
+          <button onClick={logout} className="logout-button">Logout</button>
         </>
       )}
       {!user && (
-        <button onClick={() => setShowLogin(true)} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>Login</button>
+        <button onClick={() => setShowLogin(true)} className="login-button">Login</button>
       )}
     </div>
   );

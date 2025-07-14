@@ -20,6 +20,8 @@ function MapDashboard() {
   const [showCoordinatorModal, setShowCoordinatorModal] = useState(false);
   const [selectedCountyForCoordinator, setSelectedCountyForCoordinator] = useState(null);
   const [countyName, setCountyName] = useState(null);
+  const [coordinatorLoading, setCoordinatorLoading] = useState(false);
+  const [currentHoverCounty, setCurrentHoverCounty] = useState(null);
 
   const { user } = useAuth();
 
@@ -152,25 +154,42 @@ function MapDashboard() {
       };
       setHoverInfo(enhancedInfo);
       setCountyName(info.name);
-      setCoordinator(null); // Clear before fetching
-      // Fetch coordinator for this county
-      const token = localStorage.getItem("token");
-      if (token) {
-        const API_URL = getApiUrl();
-        axios.get(`${API_URL}/api/coordinator/county/${info.countyfp}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-          .then(res => {
-            // The API returns {"coordinator":"name"} or {"coordinator":{"name":"name", ...}}
-            const coordinatorName = res.data.coordinator?.name || res.data.coordinator || null;
-            setCoordinator(coordinatorName);
+      
+      // Only fetch coordinator if we haven't already fetched it for this county
+      if (currentHoverCounty !== info.countyfp) {
+        setCurrentHoverCounty(info.countyfp);
+        setCoordinatorLoading(true);
+        
+        const token = localStorage.getItem("token");
+        if (token) {
+          const API_URL = getApiUrl();
+          axios.get(`${API_URL}/api/coordinator/county/${info.countyfp}`, {
+            headers: { Authorization: `Bearer ${token}` }
           })
-          .catch(() => setCoordinator(null));
+            .then(res => {
+              // Only update if we're still hovering over the same county
+              if (currentHoverCounty === info.countyfp) {
+                const coordinatorName = res.data.coordinator?.name || res.data.coordinator || null;
+                setCoordinator(coordinatorName);
+                setCoordinatorLoading(false);
+              }
+            })
+            .catch(() => {
+              if (currentHoverCounty === info.countyfp) {
+                setCoordinator(null);
+                setCoordinatorLoading(false);
+              }
+            });
+        } else {
+          setCoordinatorLoading(false);
+        }
       }
     } else {
       setHoverInfo(null);
       setCoordinator(null);
       setCountyName(null);
+      setCurrentHoverCounty(null);
+      setCoordinatorLoading(false);
     }
   };
 
@@ -182,23 +201,41 @@ function MapDashboard() {
     if (info) {
       setHoverInfo(info);
       setCountyName(selectedCounty?.name);
-      // Fetch coordinator for this tract
-      const token = localStorage.getItem("token");
-      if (token) {
-        const API_URL = getApiUrl();
-        axios.get(`${API_URL}/api/coordinator/tract/${info.tractId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-          .then(res => {
-            // The API returns {"coordinator":"name"} or {"coordinator":{"name":"name", ...}}
-            const coordinatorName = res.data.coordinator?.name || res.data.coordinator || null;
-            setCoordinator(coordinatorName);
+      
+      // Only fetch coordinator if we haven't already fetched it for this tract
+      if (currentHoverCounty !== info.tractId) {
+        setCurrentHoverCounty(info.tractId);
+        setCoordinatorLoading(true);
+        
+        const token = localStorage.getItem("token");
+        if (token) {
+          const API_URL = getApiUrl();
+          axios.get(`${API_URL}/api/coordinator/tract/${info.tractId}`, {
+            headers: { Authorization: `Bearer ${token}` }
           })
-          .catch(() => setCoordinator(null));
+            .then(res => {
+              // Only update if we're still hovering over the same tract
+              if (currentHoverCounty === info.tractId) {
+                const coordinatorName = res.data.coordinator?.name || res.data.coordinator || null;
+                setCoordinator(coordinatorName);
+                setCoordinatorLoading(false);
+              }
+            })
+            .catch(() => {
+              if (currentHoverCounty === info.tractId) {
+                setCoordinator(null);
+                setCoordinatorLoading(false);
+              }
+            });
+        } else {
+          setCoordinatorLoading(false);
+        }
       }
     } else {
       setHoverInfo(null);
       setCoordinator(null);
+      setCurrentHoverCounty(null);
+      setCoordinatorLoading(false);
     }
   };
 
@@ -268,16 +305,7 @@ function MapDashboard() {
         )}
         
         {hoverInfo && (
-          <div 
-            className="map-info-panel"
-            style={{
-              position: 'fixed',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              left: 'calc(50% + 200px)',
-              zIndex: 1000
-            }}
-          >
+          <div className="map-info-panel">
             <HoverInfoBox
               info={hoverInfo}
               setDiscipleMakers={handleDiscipleMakersChange}
@@ -286,6 +314,7 @@ function MapDashboard() {
               coordinator={coordinator}
               countyName={countyName}
               onDataUpdate={handleDataUpdate}
+              coordinatorLoading={coordinatorLoading}
             />
           </div>
         )}

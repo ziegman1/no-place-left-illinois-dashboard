@@ -3,7 +3,7 @@ import { useAuth } from "../App";
 import axios from "axios";
 import { getApiUrl } from "../utils/api";
 
-function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, countyMetrics, coordinator, countyName, onDataUpdate }) {
+function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, countyMetrics, coordinator, countyName, onDataUpdate, coordinatorLoading = false }) {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -140,22 +140,24 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
 
   return (
     <div style={{ color: "#222" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <h2 style={{ margin: 0, fontSize: "16px" }}>{!isTract ? name : (countyName ? `${countyName} County` : "Tract Details")}</h2>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "8px" }}>
+        <h2 style={{ margin: 0, fontSize: "16px", wordBreak: "break-word" }}>{!isTract ? name : (countyName ? `${countyName} County` : "Tract Details")}</h2>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
           {showEditButton && (
             <>
               {!isEditing ? (
                 <button
                   onClick={() => setIsEditing(true)}
                   style={{
-                    padding: "4px 8px",
+                    padding: "8px 12px",
                     backgroundColor: "#007bff",
                     color: "white",
                     border: "none",
                     borderRadius: "4px",
                     cursor: "pointer",
-                    fontSize: "12px"
+                    fontSize: "14px",
+                    minHeight: "44px",
+                    minWidth: "44px"
                   }}
                 >
                   Edit
@@ -166,13 +168,15 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
                     onClick={handleSave}
                     disabled={saving}
                     style={{
-                      padding: "4px 8px",
+                      padding: "8px 12px",
                       backgroundColor: "#28a745",
                       color: "white",
                       border: "none",
                       borderRadius: "4px",
                       cursor: saving ? "not-allowed" : "pointer",
-                      fontSize: "12px"
+                      fontSize: "14px",
+                      minHeight: "44px",
+                      minWidth: "44px"
                     }}
                   >
                     {saving ? "Saving..." : "Save"}
@@ -180,13 +184,15 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
                   <button
                     onClick={handleCancel}
                     style={{
-                      padding: "4px 8px",
+                      padding: "8px 12px",
                       backgroundColor: "#6c757d",
                       color: "white",
                       border: "none",
                       borderRadius: "4px",
                       cursor: "pointer",
-                      fontSize: "12px"
+                      fontSize: "14px",
+                      minHeight: "44px",
+                      minWidth: "44px"
                     }}
                   >
                     Cancel
@@ -201,13 +207,15 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
               window.dispatchEvent(new CustomEvent('closeHoverPanel'));
             }}
             style={{
-              padding: "2px 6px",
+              padding: "8px 12px",
               backgroundColor: "#6c757d",
               color: "white",
               border: "none",
               borderRadius: "4px",
               cursor: "pointer",
-              fontSize: "12px"
+              fontSize: "14px",
+              minHeight: "44px",
+              minWidth: "44px"
             }}
           >
             ×
@@ -250,49 +258,60 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
           <li><b>People Far from God:</b> {info.peopleFarFromGod.toLocaleString()}</li>
         )}
         <li>
-          <b>Coordinator:</b> {coordinator || "Needed"}
-          {!isTract && user && user.role === "state" && (
+          <b>Coordinator:</b> 
+          {coordinatorLoading ? (
+            <span style={{ marginLeft: 8, color: "#666", fontStyle: "italic" }}>Loading...</span>
+          ) : (
             <>
-              {!coordinator ? (
-                <button
-                  onClick={() => {
-                    // Trigger coordinator assignment modal
-                    window.dispatchEvent(new CustomEvent('openCoordinatorModal', {
-                      detail: { countyfp: info.countyfp, countyName: info.name }
-                    }));
-                  }}
-                  style={{
-                    marginLeft: 8,
-                    padding: "4px 8px",
-                    backgroundColor: "#007bff",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontSize: "12px"
-                  }}
-                >
-                  Assign
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    // Navigate to data management dashboard
-                    window.dispatchEvent(new CustomEvent('navigateToDataManagement'));
-                  }}
-                  style={{
-                    marginLeft: 8,
-                    padding: "4px 8px",
-                    backgroundColor: "#28a745",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    fontSize: "12px"
-                  }}
-                >
-                  Manage
-                </button>
+              {coordinator || "Needed"}
+              {!isTract && user && user.role === "state" && (
+                <>
+                  {!coordinator ? (
+                    <button
+                      onClick={() => {
+                        // Trigger coordinator assignment modal
+                        window.dispatchEvent(new CustomEvent('openCoordinatorModal', {
+                          detail: { countyfp: info.countyfp, countyName: info.name }
+                        }));
+                      }}
+                      style={{
+                        marginLeft: 8,
+                        padding: "8px 12px",
+                        backgroundColor: "#007bff",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        minHeight: "44px",
+                        minWidth: "44px"
+                      }}
+                    >
+                      Assign
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        // Navigate to data management dashboard
+                        window.dispatchEvent(new CustomEvent('navigateToDataManagement'));
+                      }}
+                      style={{
+                        marginLeft: 8,
+                        padding: "8px 12px",
+                        backgroundColor: "#28a745",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        minHeight: "44px",
+                        minWidth: "44px"
+                      }}
+                    >
+                      Manage
+                    </button>
+                  )}
+                </>
               )}
             </>
           )}
