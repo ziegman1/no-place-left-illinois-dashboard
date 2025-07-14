@@ -141,46 +141,16 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
   return (
     <div style={{ color: "#222" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <h2>{!isTract ? name : (countyName ? `${countyName} County` : "Tract Details")}</h2>
-        {showEditButton && (
-          <div style={{ display: "flex", gap: "8px" }}>
-            {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                style={{
-                  padding: "4px 8px",
-                  backgroundColor: "#007bff",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "12px"
-                }}
-              >
-                Edit
-              </button>
-            ) : (
-              <>
+        <h2 style={{ margin: 0, fontSize: "16px" }}>{!isTract ? name : (countyName ? `${countyName} County` : "Tract Details")}</h2>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          {showEditButton && (
+            <>
+              {!isEditing ? (
                 <button
-                  onClick={handleSave}
-                  disabled={saving}
+                  onClick={() => setIsEditing(true)}
                   style={{
                     padding: "4px 8px",
-                    backgroundColor: "#28a745",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: saving ? "not-allowed" : "pointer",
-                    fontSize: "12px"
-                  }}
-                >
-                  {saving ? "Saving..." : "Save"}
-                </button>
-                <button
-                  onClick={handleCancel}
-                  style={{
-                    padding: "4px 8px",
-                    backgroundColor: "#6c757d",
+                    backgroundColor: "#007bff",
                     color: "white",
                     border: "none",
                     borderRadius: "4px",
@@ -188,12 +158,61 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
                     fontSize: "12px"
                   }}
                 >
-                  Cancel
+                  Edit
                 </button>
-              </>
-            )}
-          </div>
-        )}
+              ) : (
+                <>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    style={{
+                      padding: "4px 8px",
+                      backgroundColor: "#28a745",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: saving ? "not-allowed" : "pointer",
+                      fontSize: "12px"
+                    }}
+                  >
+                    {saving ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    style={{
+                      padding: "4px 8px",
+                      backgroundColor: "#6c757d",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "12px"
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+            </>
+          )}
+          <button
+            onClick={() => {
+              // Trigger close event
+              window.dispatchEvent(new CustomEvent('closeHoverPanel'));
+            }}
+            style={{
+              padding: "2px 6px",
+              backgroundColor: "#6c757d",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "12px"
+            }}
+          >
+            ×
+          </button>
+        </div>
       </div>
 
       {user && user.roles && user.roles.length > 0 && (

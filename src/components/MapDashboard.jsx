@@ -17,11 +17,8 @@ function MapDashboard() {
   const [tractPopulationsByCounty, setTractPopulationsByCounty] = useState({});
   const [countyMetrics, setCountyMetrics] = useState({});
   const [coordinator, setCoordinator] = useState(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [showCoordinatorModal, setShowCoordinatorModal] = useState(false);
   const [selectedCountyForCoordinator, setSelectedCountyForCoordinator] = useState(null);
-  const [isHovering, setIsHovering] = useState(false);
-  const [hoverStartPosition, setHoverStartPosition] = useState({ x: 0, y: 0 });
   const [countyName, setCountyName] = useState(null);
   const { user } = useAuth();
 
@@ -47,11 +44,20 @@ function MapDashboard() {
       setShowCoordinatorModal(true);
     };
     
+    // Add event listener for closing hover panel
+    const handleCloseHoverPanel = () => {
+      setHoverInfo(null);
+      setCoordinator(null);
+      setCountyName(null);
+    };
+    
     window.addEventListener('openCoordinatorModal', handleCoordinatorModal);
+    window.addEventListener('closeHoverPanel', handleCloseHoverPanel);
 
     return () => {
       window.removeEventListener('dataChanged', handleDataChange);
       window.removeEventListener('openCoordinatorModal', handleCoordinatorModal);
+      window.removeEventListener('closeHoverPanel', handleCloseHoverPanel);
     };
   }, []);
 
@@ -138,12 +144,6 @@ function MapDashboard() {
       setHoverInfo(enhancedInfo);
       setCountyName(info.name);
       
-      // Set hover position only when starting to hover over a new county
-      if (!isHovering || hoverInfo?.countyfp !== info.countyfp) {
-        setHoverStartPosition(mousePosition);
-        setIsHovering(true);
-      }
-      
       // Fetch coordinator for this county
       if (user && user.token) {
         const API_URL = getApiUrl();
@@ -157,28 +157,7 @@ function MapDashboard() {
       setHoverInfo(null);
       setCoordinator(null);
       setCountyName(null);
-      setIsHovering(false);
     }
-  };
-
-  const handleMouseMove = (event) => {
-    // Only update mouse position when not hovering over a county
-    // This allows the panel to stay fixed when hovering
-    if (!isHovering) {
-      setMousePosition({ x: event.clientX, y: event.clientY });
-    }
-  };
-
-  const handlePanelMouseLeave = () => {
-    // When mouse leaves the panel, allow it to move again after a small delay
-    setTimeout(() => {
-      setIsHovering(false);
-    }, 100);
-  };
-
-  const handlePanelMouseEnter = () => {
-    // When mouse enters the panel, keep it fixed
-    setIsHovering(true);
   };
 
   const handleCountyClick = (info) => {
@@ -241,7 +220,7 @@ function MapDashboard() {
   };
 
   return (
-    <div className="map-dashboard-container" onMouseMove={handleMouseMove}>
+    <div className="map-dashboard-container">
       <h1 className="map-dashboard-title">
         Illinois Map Dashboard
       </h1>
@@ -273,12 +252,10 @@ function MapDashboard() {
             className="map-info-panel"
             style={{
               position: 'fixed',
-              top: Math.min(hoverStartPosition.y + 10, window.innerHeight - 400),
-              left: Math.min(hoverStartPosition.x + 10, window.innerWidth - 320),
+              top: 10,
+              left: 10,
               zIndex: 1000
             }}
-            onMouseLeave={handlePanelMouseLeave}
-            onMouseEnter={handlePanelMouseEnter}
           >
             <HoverInfoBox
               info={hoverInfo}

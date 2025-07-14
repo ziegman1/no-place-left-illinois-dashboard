@@ -94,14 +94,15 @@
 }
 
 .map-info-panel {
-  width: 300px;
-  max-height: 400px;
+  width: 280px;
+  max-height: 350px;
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  padding: 20px;
+  padding: 15px;
   overflow-y: auto;
   z-index: 1000;
+  font-size: 14px;
 }
 
 .back-to-counties-button {
