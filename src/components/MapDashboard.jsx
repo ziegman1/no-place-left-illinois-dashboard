@@ -151,7 +151,7 @@ function MapDashboard() {
       };
       setHoverInfo(enhancedInfo);
       setCountyName(info.name);
-      
+      setCoordinator(null); // Clear before fetching
       // Fetch coordinator for this county
       const token = localStorage.getItem("token");
       if (token) {
@@ -160,11 +160,8 @@ function MapDashboard() {
           headers: { Authorization: `Bearer ${token}` }
         })
           .then(res => {
-            // Use the name field if available, otherwise fall back to first_name + last_name
-            const coordinatorName = res.data.coordinator?.name || 
-              (res.data.coordinator?.first_name && res.data.coordinator?.last_name ? 
-                `${res.data.coordinator.first_name} ${res.data.coordinator.last_name}` : 
-                res.data.coordinator?.email || null);
+            // The API returns {"coordinator":"name"} or {"coordinator":{"name":"name", ...}}
+            const coordinatorName = res.data.coordinator?.name || res.data.coordinator || null;
             setCoordinator(coordinatorName);
           })
           .catch(() => setCoordinator(null));
@@ -192,11 +189,8 @@ function MapDashboard() {
           headers: { Authorization: `Bearer ${token}` }
         })
           .then(res => {
-            // Use the name field if available, otherwise fall back to first_name + last_name
-            const coordinatorName = res.data.coordinator?.name || 
-              (res.data.coordinator?.first_name && res.data.coordinator?.last_name ? 
-                `${res.data.coordinator.first_name} ${res.data.coordinator.last_name}` : 
-                res.data.coordinator?.email || null);
+            // The API returns {"coordinator":"name"} or {"coordinator":{"name":"name", ...}}
+            const coordinatorName = res.data.coordinator?.name || res.data.coordinator || null;
             setCoordinator(coordinatorName);
           })
           .catch(() => setCoordinator(null));
@@ -320,33 +314,18 @@ function MapDashboard() {
                   headers: { Authorization: `Bearer ${token}` }
                 })
                   .then(res => {
-                    const coordinatorName = res.data.coordinator?.name || 
-                      (res.data.coordinator?.first_name && res.data.coordinator?.last_name ? 
-                        `${res.data.coordinator.first_name} ${res.data.coordinator.last_name}` : 
-                        res.data.coordinator?.email || null);
+                    // The API returns {"coordinator":"name"} or {"coordinator":{"name":"name", ...}}
+                    const coordinatorName = res.data.coordinator?.name || res.data.coordinator || null;
                     setCoordinator(coordinatorName);
                   })
                   .catch(() => setCoordinator(null));
               }
             }
           }}
-          onCoordinatorAssigned={(coordinatorEmail) => {
-            // Update the coordinator display in the hover info
-            // The coordinator name should be fetched from the database
-            const token = localStorage.getItem("token");
-            if (token && hoverInfo && hoverInfo.countyfp) {
-              const API_URL = getApiUrl();
-              axios.get(`${API_URL}/api/coordinator/county/${hoverInfo.countyfp}`, {
-                headers: { Authorization: `Bearer ${token}` }
-              })
-                .then(res => {
-                  const coordinatorName = res.data.coordinator?.name || 
-                    (res.data.coordinator?.first_name && res.data.coordinator?.last_name ? 
-                      `${res.data.coordinator.first_name} ${res.data.coordinator.last_name}` : 
-                      res.data.coordinator?.email || null);
-                  setCoordinator(coordinatorName);
-                })
-                .catch(() => setCoordinator(null));
+          onCoordinatorAssigned={() => {
+            // Re-fetch coordinator for the currently hovered county
+            if (hoverInfo && hoverInfo.countyfp) {
+              handleCountyHover(hoverInfo);
             }
           }}
           onNavigateToDataManagement={() => {
