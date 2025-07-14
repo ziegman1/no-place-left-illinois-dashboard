@@ -46,6 +46,31 @@ export function AuthProvider({ children }) {
   const [mustResetPassword, setMustResetPassword] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
 
+  // Reconstruct user object from stored token on component mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      try {
+        const decoded = jwtDecode(storedToken);
+        const user = {
+          email: decoded.mail,
+          role: decoded.role,
+          roles: [
+            { role: decoded.role, countyfp: decoded.countyfp, tractid: decoded.tractid }
+          ]
+        };
+        setUser(user);
+        setToken(storedToken);
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        // Token is invalid, remove it
+        localStorage.removeItem("token");
+        setToken(null);
+        setUser(null);
+      }
+    }
+  }, []);
+
   // Mock login function that works without API
   const login = async (email, password) => {
     try {
@@ -350,8 +375,16 @@ function App() {
 }
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState('about');
+  const [currentPage, setCurrentPage] = useState(() => {
+    // Initialize from localStorage or default to 'about'
+    return localStorage.getItem('currentPage') || 'about';
+  });
   const { user } = useAuth();
+
+  // Save current page to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('currentPage', currentPage);
+  }, [currentPage]);
 
   // Add event listener for navigation from child components
   useEffect(() => {
