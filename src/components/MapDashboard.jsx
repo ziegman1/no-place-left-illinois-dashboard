@@ -252,8 +252,9 @@ function MapDashboard() {
             className="map-info-panel"
             style={{
               position: 'fixed',
-              top: 10,
-              right: 10,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              left: 'calc(50% + 200px)',
               zIndex: 1000
             }}
           >
