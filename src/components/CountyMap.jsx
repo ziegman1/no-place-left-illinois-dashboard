@@ -9,7 +9,7 @@ import CountyEditModal from "./CountyEditModal";
 const ILLINOIS_CENTER = [40.0, -89.0];
 const US_ZOOM = 5.5;
 
-function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMakers, stateConfig, onDataRefresh }) {
+function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMakers, stateConfig, onDataRefresh, countyMetrics }) {
   if (!stateConfig) {
     return <div>Loading map configuration...</div>;
   }
@@ -71,12 +71,13 @@ function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMa
       population = feature.properties.POP2010;
     }
     const countyfp = feature.properties.COUNTYFP || feature.properties.countyfp;
-    const discipleCount = discipleMakers[name] || 0;
+    // Use countyMetrics (by FIPS) for metrics, fallback to 0s
+    const metrics = (countyMetrics && countyMetrics[countyfp]) || { discipleMakers: 0, simpleChurches: 0, legacyChurches: 0 };
     let peopleFarFromGod = 0;
     let percentFarFromGod = 0;
     if (population && population > 0) {
       const initialPeopleFarFromGod = population * 0.85;
-      peopleFarFromGod = Math.max(0, initialPeopleFarFromGod - discipleCount);
+      peopleFarFromGod = Math.max(0, initialPeopleFarFromGod - metrics.discipleMakers);
       percentFarFromGod = (peopleFarFromGod / population) * 100;
     }
     return {
@@ -85,9 +86,9 @@ function CountyMap({ onCountyHover, onCountyClick, discipleMakers, setDiscipleMa
       countyfp,
       percentFarFromGod,
       peopleFarFromGod: Math.round(peopleFarFromGod),
-      simpleChurches: 0,
-      legacyChurches: 0,
-      discipleMakers: discipleCount,
+      simpleChurches: metrics.simpleChurches,
+      legacyChurches: metrics.legacyChurches,
+      discipleMakers: metrics.discipleMakers,
     };
   }
 

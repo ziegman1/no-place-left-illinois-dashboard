@@ -300,7 +300,8 @@ function MapDashboard() {
             discipleMakers={discipleMakers}
             setDiscipleMakers={setDiscipleMakers}
             stateConfig={stateConfig}
-            onDataRefresh={handleDataRefresh}
+            onDataRefresh={fetchData}
+            countyMetrics={countyMetrics}
           />
         ) : (
           <TractMap
