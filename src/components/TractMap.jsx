@@ -15,6 +15,7 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
   const [selectedTract, setSelectedTract] = useState(null);
   const [lastTappedTract, setLastTappedTract] = useState(null);
   const [selectedTractId, setSelectedTractId] = useState(null);
+  const [lockedTractId, setLockedTractId] = useState(null);
 
   // Mobile device detection
   const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
@@ -122,6 +123,13 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
     if (countyGEOID) fetchData();
   }, []); // Empty dependency array means this runs once when component mounts
 
+  // Reset state when county changes
+  useEffect(() => {
+    setSelectedTractId(null);
+    setLastTappedTract(null);
+    setLockedTractId(null);
+  }, [countyGEOID]);
+
   function getTractInfo(feature) {
     const tractCe = feature.properties.TRACTCE || feature.properties.tractce;
     const countyFp = feature.properties.COUNTYFP || feature.properties.countyfp;
@@ -200,14 +208,14 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
     const tractId = info.tractId;
     layer.on({
       mouseover: () => {
-        if (!isTouchDevice) {
-        onTractHover(info);
+        if (!isTouchDevice && !lockedTractId) {
+          onTractHover(info);
           setHighlightTract(tractId);
         }
       },
       mouseout: () => {
-        if (!isTouchDevice) {
-        onTractHover(null);
+        if (!isTouchDevice && !lockedTractId) {
+          onTractHover(null);
           clearHighlightTract();
         }
       },
@@ -230,28 +238,38 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
             setHighlightTract(tractId);
           }
         } else {
-          // Desktop click - open edit modal if logged in
-          setHighlightTract(tractId);
-          if (user && user.role === "state") {
-            setSelectedTract(info);
-            setShowDetailModal(true);
+          // Desktop click - handle lock/unlock or edit modal
+          if (lockedTractId === tractId) {
+            // Unlock the tract
+            setLockedTractId(null);
+            onTractHover(null);
+            clearHighlightTract();
+          } else if (lockedTractId) {
+            // Another tract is locked, unlock it and lock this one
+            setLockedTractId(tractId);
+            onTractHover(info);
+            setHighlightTract(tractId);
           } else {
-            onTractClick(info);
+            // No tract is locked, lock this one
+            setLockedTractId(tractId);
+            onTractHover(info);
+            setHighlightTract(tractId);
           }
         }
       },
     });
-    // Set style: highlight if selected
+    // Set style: highlight if selected or locked
     const isSelected = selectedTractId === tractId;
+    const isLocked = lockedTractId === tractId;
     layer.setStyle({
-      color: isSelected ? "#222" : "#333",
-      weight: isSelected ? 4 : 1,
-      fillOpacity: isSelected ? 0.85 : 0.7,
-      fillColor: getTractColor(info.population, info.discipleMakers, isSelected),
+      color: isSelected || isLocked ? "#222" : "#333",
+      weight: isSelected || isLocked ? 4 : 1,
+      fillOpacity: isSelected || isLocked ? 0.85 : 0.7,
+      fillColor: getTractColor(info.population, info.discipleMakers, isSelected || isLocked),
     });
   }
 
-  // Redraw colors and highlight if discipleMakers, tractData, or selectedTractId changes
+  // Redraw colors and highlight if discipleMakers, tractData, selectedTractId, or lockedTractId changes
   useEffect(() => {
     if (!geoJsonLayerRef.current) return;
     geoJsonLayerRef.current.eachLayer((layer) => {
@@ -259,15 +277,16 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
         const info = getTractInfo(layer.feature);
         const tractId = info.tractId;
         const isSelected = selectedTractId === tractId;
+        const isLocked = lockedTractId === tractId;
         layer.setStyle({
-          fillColor: getTractColor(info.population, info.discipleMakers, isSelected),
-          color: isSelected ? "#222" : "#333",
-          weight: isSelected ? 4 : 1,
-          fillOpacity: isSelected ? 0.85 : 0.7,
+          fillColor: getTractColor(info.population, info.discipleMakers, isSelected || isLocked),
+          color: isSelected || isLocked ? "#222" : "#333",
+          weight: isSelected || isLocked ? 4 : 1,
+          fillOpacity: isSelected || isLocked ? 0.85 : 0.7,
         });
       }
     });
-  }, [tractDiscipleMakers, fullTractData, selectedTractId]);
+  }, [tractDiscipleMakers, fullTractData, selectedTractId, lockedTractId]);
 
   return (
     <>
@@ -315,6 +334,44 @@ function TractMap({ countyGEOID, onTractHover, onTractClick, tractDiscipleMakers
           setSelectedTract(null);
         }}
       />
+      
+      {/* Add a small indicator when a tract is locked */}
+      {lockedTractId && (
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          color: 'white',
+          padding: '8px 12px',
+          borderRadius: '4px',
+          fontSize: '12px',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span>🔒 Tract Locked</span>
+          <button
+            onClick={() => {
+              setLockedTractId(null);
+              onTractHover(null);
+              clearHighlightTract();
+            }}
+            style={{
+              backgroundColor: 'transparent',
+              border: '1px solid white',
+              color: 'white',
+              padding: '2px 6px',
+              borderRadius: '2px',
+              cursor: 'pointer',
+              fontSize: '10px'
+            }}
+          >
+            Unlock
+          </button>
+        </div>
+      )}
     </>
   );
 }

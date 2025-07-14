@@ -20,6 +20,7 @@ function MapDashboard() {
   const [showCoordinatorModal, setShowCoordinatorModal] = useState(false);
   const [selectedCountyForCoordinator, setSelectedCountyForCoordinator] = useState(null);
   const [countyName, setCountyName] = useState(null);
+
   const { user } = useAuth();
 
   const stateConfig = {
@@ -178,8 +179,8 @@ function MapDashboard() {
   };
 
   const handleTractHover = (info) => {
-    setHoverInfo(info);
     if (info) {
+      setHoverInfo(info);
       setCountyName(selectedCounty?.name);
       // Fetch coordinator for this tract
       const token = localStorage.getItem("token");
@@ -196,6 +197,7 @@ function MapDashboard() {
           .catch(() => setCoordinator(null));
       }
     } else {
+      setHoverInfo(null);
       setCoordinator(null);
     }
   };
