@@ -20,6 +20,8 @@ function MapDashboard() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [showCoordinatorModal, setShowCoordinatorModal] = useState(false);
   const [selectedCountyForCoordinator, setSelectedCountyForCoordinator] = useState(null);
+  const [isHovering, setIsHovering] = useState(false);
+  const [hoverStartPosition, setHoverStartPosition] = useState({ x: 0, y: 0 });
   const [countyName, setCountyName] = useState(null);
   const { user } = useAuth();
 
@@ -135,6 +137,13 @@ function MapDashboard() {
       };
       setHoverInfo(enhancedInfo);
       setCountyName(info.name);
+      
+      // Set hover position only when starting to hover over a new county
+      if (!isHovering || hoverInfo?.countyfp !== info.countyfp) {
+        setHoverStartPosition(mousePosition);
+        setIsHovering(true);
+      }
+      
       // Fetch coordinator for this county
       if (user && user.token) {
         const API_URL = getApiUrl();
@@ -148,13 +157,28 @@ function MapDashboard() {
       setHoverInfo(null);
       setCoordinator(null);
       setCountyName(null);
+      setIsHovering(false);
     }
   };
 
   const handleMouseMove = (event) => {
-    if (hoverInfo) {
+    // Only update mouse position when not hovering over a county
+    // This allows the panel to stay fixed when hovering
+    if (!isHovering) {
       setMousePosition({ x: event.clientX, y: event.clientY });
     }
+  };
+
+  const handlePanelMouseLeave = () => {
+    // When mouse leaves the panel, allow it to move again after a small delay
+    setTimeout(() => {
+      setIsHovering(false);
+    }, 100);
+  };
+
+  const handlePanelMouseEnter = () => {
+    // When mouse enters the panel, keep it fixed
+    setIsHovering(true);
   };
 
   const handleCountyClick = (info) => {
@@ -249,10 +273,12 @@ function MapDashboard() {
             className="map-info-panel"
             style={{
               position: 'fixed',
-              top: Math.min(mousePosition.y + 10, window.innerHeight - 400),
-              left: Math.min(mousePosition.x + 10, window.innerWidth - 320),
+              top: Math.min(hoverStartPosition.y + 10, window.innerHeight - 400),
+              left: Math.min(hoverStartPosition.x + 10, window.innerWidth - 320),
               zIndex: 1000
             }}
+            onMouseLeave={handlePanelMouseLeave}
+            onMouseEnter={handlePanelMouseEnter}
           >
             <HoverInfoBox
               info={hoverInfo}
