@@ -78,21 +78,48 @@ function MapDashboard() {
       const token = localStorage.getItem("token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
-      const [discipleRes, tractRes] = await Promise.all([
+      const [discipleRes, tractRes, allTractRes] = await Promise.all([
         axios.get(`${API_URL}/api/disciple-makers`, { headers }),
-        axios.get(`${API_URL}/api/tract-data`, { headers })
+        axios.get(`${API_URL}/api/tract-data`, { headers }),
+        axios.get(`${API_URL}/api/tract-data/all`, { headers })
       ]);
       
       setDiscipleMakers(discipleRes.data);
       setTractData(tractRes.data);
       
-      // Calculate tract populations by county
+      // Calculate tract populations by county using ALL tract data
       const populations = {};
       // Calculate county-level disciple-making metrics as sums of all tracts
       const countyMetrics = {};
       
-      Object.keys(tractRes.data).forEach(tractId => {
-        const tract = tractRes.data[tractId];
+      // County FIPS to name mapping (matching backend)
+      const COUNTY_FIPS_TO_NAME = {
+        '001': 'Adams', '003': 'Alexander', '005': 'Bond', '007': 'Boone', '009': 'Brown',
+        '011': 'Bureau', '013': 'Calhoun', '015': 'Carroll', '017': 'Cass', '019': 'Champaign',
+        '021': 'Christian', '023': 'Clark', '025': 'Clay', '027': 'Clinton', '029': 'Coles',
+        '031': 'Cook', '033': 'Crawford', '035': 'Cumberland', '037': 'DeKalb', '039': 'De Witt',
+        '041': 'Douglas', '043': 'DuPage', '045': 'Edgar', '047': 'Edwards', '049': 'Effingham',
+        '051': 'Fayette', '053': 'Ford', '055': 'Franklin', '057': 'Fulton', '059': 'Gallatin',
+        '061': 'Greene', '063': 'Grundy', '065': 'Hamilton', '067': 'Hancock', '069': 'Hardin',
+        '071': 'Henderson', '073': 'Henry', '075': 'Iroquois', '077': 'Jackson', '079': 'Jasper',
+        '081': 'Jefferson', '083': 'Jersey', '085': 'Jo Daviess', '087': 'Johnson', '089': 'Kane',
+        '091': 'Kankakee', '093': 'Kendall', '095': 'Knox', '097': 'Lake', '099': 'LaSalle',
+        '101': 'Lawrence', '103': 'Lee', '105': 'Livingston', '107': 'Logan', '109': 'McDonough',
+        '111': 'McHenry', '113': 'McLean', '115': 'Macon', '117': 'Macoupin', '119': 'Madison',
+        '121': 'Marion', '123': 'Marshall', '125': 'Mason', '127': 'Massac', '129': 'Menard',
+        '131': 'Mercer', '133': 'Monroe', '135': 'Montgomery', '137': 'Morgan', '139': 'Moultrie',
+        '141': 'Ogle', '143': 'Peoria', '145': 'Perry', '147': 'Piatt', '149': 'Pike',
+        '151': 'Pope', '153': 'Pulaski', '155': 'Putnam', '157': 'Randolph', '159': 'Richland',
+        '161': 'Rock Island', '163': 'St. Clair', '165': 'Saline', '167': 'Sangamon', '169': 'Schuyler',
+        '171': 'Scott', '173': 'Shelby', '175': 'Stark', '177': 'Stephenson', '179': 'Tazewell',
+        '181': 'Union', '183': 'Vermilion', '185': 'Wabash', '187': 'Warren', '189': 'Washington',
+        '191': 'Wayne', '193': 'White', '195': 'Whiteside', '197': 'Will', '199': 'Williamson',
+        '201': 'Winnebago', '203': 'Woodford'
+      };
+      
+      // Use allTractRes.data for county calculations (includes all tracts with population data)
+      Object.keys(allTractRes.data).forEach(tractId => {
+        const tract = allTractRes.data[tractId];
         if (tract.countyfp) {
           if (!populations[tract.countyfp]) {
             populations[tract.countyfp] = 0;
@@ -121,21 +148,24 @@ function MapDashboard() {
       });
       setTractPopulationsByCounty(populations);
       
-      // Set tract disciple makers
+      // Set tract disciple makers (use the manually updated tract data for individual tract display)
       const tractDiscipleData = {};
       Object.keys(tractRes.data).forEach(tractId => {
         tractDiscipleData[tractId] = tractRes.data[tractId].discipleMakers || 0;
       });
       setTractDiscipleMakers(tractDiscipleData);
       
-      // Update discipleMakers state with county-level sums
+      // Update discipleMakers state with county-level sums using county names
       const countyDiscipleMakers = {};
       Object.keys(countyMetrics).forEach(countyfp => {
-        countyDiscipleMakers[countyfp] = countyMetrics[countyfp].discipleMakers;
+        const countyName = COUNTY_FIPS_TO_NAME[countyfp];
+        if (countyName) {
+          countyDiscipleMakers[countyName] = countyMetrics[countyfp].discipleMakers;
+        }
       });
       setDiscipleMakers(countyDiscipleMakers);
       
-      // Store county metrics for hover info
+      // Store county metrics for hover info (keep FIPS codes for hover lookup)
       setCountyMetrics(countyMetrics);
     } catch (err) {
       console.error("Failed to fetch data:", err);

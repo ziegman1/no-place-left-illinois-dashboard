@@ -1403,6 +1403,92 @@ app.post('/api/sync-population-data', requireRole(['state']), (req, res) => {
   }
 });
 
+// Get all tract data for county calculations (includes population from GeoJSON)
+app.get('/api/tract-data/all', requireRole(['state', 'county', 'tract']), (req, res) => {
+  const { role, countyfp, tractid } = req.user;
+  
+  // First, get all manually updated tract data
+  let query = 'SELECT * FROM tract_data WHERE updated_by IS NOT NULL';
+  let params = [];
+  
+  // Filter by user permissions
+  if (role === 'county') {
+    // County coordinators can see all tracts in their county that have been manually updated
+    // For now, we'll return all manually updated tract data and filter on frontend
+  } else if (role === 'tract') {
+    // Tract coordinators can only see their assigned tract if it has been manually updated
+    query += ' AND tract_id = ?';
+    params.push(tractid);
+  }
+  
+  query += ' ORDER BY tract_id';
+  
+  db.all(query, params, (err, tractData) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    
+    // Create a map of manually updated tract data
+    const manualTractData = {};
+    tractData.forEach(tract => {
+      manualTractData[tract.tract_id] = {
+        tractId: tract.tract_id,
+        population: tract.population || 0,
+        discipleMakers: tract.disciple_makers || 0,
+        simpleChurches: tract.simple_churches || 0,
+        legacyChurches: tract.legacy_churches || 0,
+        countyfp: tract.countyfp || null,
+        updatedAt: tract.updated_at,
+        updatedBy: tract.updated_by
+      };
+    });
+    
+    // Now read the GeoJSON file to get population data for all tracts
+    const fs = require('fs');
+    const path = require('path');
+    const tractGeoJsonPath = path.join(__dirname, '../public/fixed_tracts.geojson');
+    
+    try {
+      if (fs.existsSync(tractGeoJsonPath)) {
+        const tractGeoJson = JSON.parse(fs.readFileSync(tractGeoJsonPath, 'utf8'));
+        
+        const allTractData = {};
+        
+        tractGeoJson.features.forEach(feature => {
+          const tractId = feature.properties.TRACTCE || feature.properties.tractce;
+          const countyFips = feature.properties.COUNTYFP || feature.properties.countyfp;
+          const population = feature.properties.POP_2020 || feature.properties.population || feature.properties.POPULATION || feature.properties.POP2010 || 0;
+          
+          // Start with population from GeoJSON
+          allTractData[tractId] = {
+            tractId: tractId,
+            population: population,
+            discipleMakers: 0,
+            simpleChurches: 0,
+            legacyChurches: 0,
+            countyfp: countyFips
+          };
+          
+          // Override with manually updated data if available
+          if (manualTractData[tractId]) {
+            allTractData[tractId] = {
+              ...allTractData[tractId],
+              ...manualTractData[tractId]
+            };
+          }
+        });
+        
+        res.json(allTractData);
+      } else {
+        // Fallback to just manual tract data if GeoJSON not available
+        res.json(manualTractData);
+      }
+    } catch (error) {
+      console.error('Error reading tract GeoJSON:', error);
+      // Fallback to just manual tract data
+      res.json(manualTractData);
+    }
+  });
+});
+
 // Get all tract data
 app.get('/api/tract-data', requireRole(['state', 'county', 'tract']), (req, res) => {
   const { role, countyfp, tractid } = req.user;
