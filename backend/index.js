@@ -189,7 +189,8 @@ db.serialize(() => {
     countyfp TEXT,
     tractid TEXT,
     first_name TEXT,
-    last_name TEXT
+    last_name TEXT,
+    name TEXT
   )`);
   
   // Password reset codes table
@@ -744,12 +745,12 @@ app.post('/api/county/assign-coordinator', requireRole(['state']), (req, res) =>
     if (existingUser) {
       // For existing users, create a new role assignment instead of updating
       // This allows multiple role assignments per user
-      db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp, first_name, last_name) VALUES (?, ?, 0, "county", ?, ?, ?)', 
-        [email, existingUser.password_hash, countyfp, first_name, last_name], function(err) {
+      db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp, first_name, last_name, name) VALUES (?, ?, 0, "county", ?, ?, ?, ?)', 
+        [email, existingUser.password_hash, countyfp, first_name, last_name, name], function(err) {
         if (err) {
           // If insert fails (e.g., duplicate), try to update existing county assignment
-          db.run('UPDATE users SET countyfp = ?, first_name = ?, last_name = ? WHERE email = ? AND role = "county"', 
-            [countyfp, first_name, last_name, email], function(updateErr) {
+          db.run('UPDATE users SET countyfp = ?, first_name = ?, last_name = ?, name = ? WHERE email = ? AND role = "county"', 
+            [countyfp, first_name, last_name, name, email], function(updateErr) {
             if (updateErr) return res.status(500).json({ error: 'Failed to assign coordinator' });
             sendWelcomeEmail(email, name, countyfp, 'county')
               .then(() => {
@@ -775,8 +776,8 @@ app.post('/api/county/assign-coordinator', requireRole(['state']), (req, res) =>
       // Create new user
       bcrypt.hash('#NPLIL', 10, (err, hash) => {
         if (err) return res.status(500).json({ error: 'Failed to hash password' });
-        db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp, first_name, last_name) VALUES (?, ?, 1, "county", ?, ?, ?)', 
-          [email, hash, countyfp, first_name, last_name], function(err) {
+        db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp, first_name, last_name, name) VALUES (?, ?, 1, "county", ?, ?, ?, ?)', 
+          [email, hash, countyfp, first_name, last_name, name], function(err) {
           if (err) return res.status(500).json({ error: 'Failed to create coordinator account' });
           sendWelcomeEmail(email, name, countyfp, 'county')
             .then(() => {
@@ -814,12 +815,12 @@ app.post('/api/tract/assign-coordinator', requireRole(['state', 'county']), (req
     if (existingUser) {
       // For existing users, create a new role assignment instead of updating
       // This allows multiple role assignments per user
-      db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp, tractid, first_name, last_name) VALUES (?, ?, 0, "tract", ?, ?, ?, ?)', 
-        [email, existingUser.password_hash, countyfp, tractid, first_name, last_name], function(err) {
+      db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp, tractid, first_name, last_name, name) VALUES (?, ?, 0, "tract", ?, ?, ?, ?, ?)', 
+        [email, existingUser.password_hash, countyfp, tractid, first_name, last_name, name], function(err) {
         if (err) {
           // If insert fails (e.g., duplicate), try to update existing tract assignment
-          db.run('UPDATE users SET countyfp = ?, tractid = ?, first_name = ?, last_name = ? WHERE email = ? AND role = "tract"', 
-            [countyfp, tractid, first_name, last_name, email], function(updateErr) {
+          db.run('UPDATE users SET countyfp = ?, tractid = ?, first_name = ?, last_name = ?, name = ? WHERE email = ? AND role = "tract"', 
+            [countyfp, tractid, first_name, last_name, name, email], function(updateErr) {
             if (updateErr) return res.status(500).json({ error: 'Failed to assign coordinator' });
             sendWelcomeEmail(email, name, tractid, 'tract')
               .then(() => {
@@ -845,8 +846,8 @@ app.post('/api/tract/assign-coordinator', requireRole(['state', 'county']), (req
       // Create new user
       bcrypt.hash('#NPLIL', 10, (err, hash) => {
         if (err) return res.status(500).json({ error: 'Failed to hash password' });
-        db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp, tractid, first_name, last_name) VALUES (?, ?, 1, "tract", ?, ?, ?, ?)', 
-          [email, hash, countyfp, tractid, first_name, last_name], function(err) {
+        db.run('INSERT INTO users (email, password_hash, must_reset_password, role, countyfp, tractid, first_name, last_name, name) VALUES (?, ?, 1, "tract", ?, ?, ?, ?, ?)', 
+          [email, hash, countyfp, tractid, first_name, last_name, name], function(err) {
           if (err) return res.status(500).json({ error: 'Failed to create coordinator account' });
           sendWelcomeEmail(email, name, tractid, 'tract')
             .then(() => {
@@ -1339,7 +1340,7 @@ app.get('/api/coordinators', requireRole(['state', 'county']), (req, res) => {
   const { role, countyfp } = req.user;
   
   let query = `
-    SELECT id, email, role, countyfp, tractid, first_name, last_name 
+    SELECT id, email, role, countyfp, tractid, first_name, last_name, name 
     FROM users 
     WHERE role IN ('county', 'tract')
   `;
@@ -1358,7 +1359,7 @@ app.get('/api/coordinators', requireRole(['state', 'county']), (req, res) => {
     
     const formattedCoordinators = coordinators.map(coord => ({
       id: coord.id,
-      name: `${coord.first_name || ''} ${coord.last_name || ''}`.trim() || coord.email,
+      name: coord.name || `${coord.first_name || ''} ${coord.last_name || ''}`.trim() || coord.email,
       email: coord.email,
       role: coord.role,
       countyfp: coord.countyfp,
@@ -1386,47 +1387,14 @@ app.post('/api/sync-population-data', requireRole(['state']), (req, res) => {
     const countyData = JSON.parse(fs.readFileSync(countyGeoJsonPath, 'utf8'));
     const tractData = JSON.parse(fs.readFileSync(tractGeoJsonPath, 'utf8'));
     
-    let updatedCount = 0;
-    let errorCount = 0;
-    
-    // Update tract population data from GeoJSON
-    tractData.features.forEach(feature => {
-      const tractId = feature.properties.TRACTCE || feature.properties.tractce;
-      const countyfp = feature.properties.COUNTYFP || feature.properties.countyfp;
-      
-      // Get population from GeoJSON properties
-      let population = 0;
-      if (feature.properties.POP_2020 !== undefined && feature.properties.POP_2020 !== null) {
-        population = parseInt(feature.properties.POP_2020);
-      } else if (feature.properties.population !== undefined && feature.properties.population !== null) {
-        population = parseInt(feature.properties.population);
-      } else if (feature.properties.POPULATION !== undefined && feature.properties.POPULATION !== null) {
-        population = parseInt(feature.properties.POPULATION);
-      } else if (feature.properties.POP2010 !== undefined && feature.properties.POP2010 !== null) {
-        population = parseInt(feature.properties.POP2010);
-      }
-      
-      if (tractId && population > 0) {
-        db.run(`
-          INSERT OR REPLACE INTO tract_data 
-          (tract_id, population, countyfp, updated_at, updated_by) 
-          VALUES (?, ?, ?, datetime('now'), ?)
-        `, [tractId, population, countyfp, req.user.email], function(err) {
-          if (err) {
-            errorCount++;
-            console.error(`Error updating tract ${tractId}:`, err);
-          } else {
-            updatedCount++;
-          }
-        });
-      }
-    });
+    // Note: This endpoint is disabled to ensure only user-entered data appears in the data management dashboard
+    // Population data should only be added when users manually enter it through the UI
     
     res.json({ 
       success: true, 
-      message: `Population data synced successfully. Updated ${updatedCount} tracts, ${errorCount} errors.`,
-      updatedCount,
-      errorCount
+      message: 'Population data sync is disabled. Only user-entered data will appear in the data management dashboard.',
+      updatedCount: 0,
+      errorCount: 0
     });
     
   } catch (error) {
@@ -1439,17 +1407,17 @@ app.post('/api/sync-population-data', requireRole(['state']), (req, res) => {
 app.get('/api/tract-data', requireRole(['state', 'county', 'tract']), (req, res) => {
   const { role, countyfp, tractid } = req.user;
   
-  let query = 'SELECT * FROM tract_data';
+  let query = 'SELECT * FROM tract_data WHERE updated_by IS NOT NULL';
   let params = [];
   
   // Filter by user permissions
   if (role === 'county') {
-    // County coordinators can see all tracts in their county
-    // For now, we'll return all tract data and filter on frontend
+    // County coordinators can see all tracts in their county that have been manually updated
+    // For now, we'll return all manually updated tract data and filter on frontend
     // In a real implementation, you'd want to store county information with tract data
   } else if (role === 'tract') {
-    // Tract coordinators can only see their assigned tract
-    query += ' WHERE tract_id = ?';
+    // Tract coordinators can only see their assigned tract if it has been manually updated
+    query += ' AND tract_id = ?';
     params.push(tractid);
   }
   
@@ -1472,10 +1440,8 @@ app.get('/api/tract-data', requireRole(['state', 'county', 'tract']), (req, res)
       };
     });
     
-    // Ensure all data follows the correct structure:
-    // - Population data comes from GeoJSON files (already handled in frontend)
-    // - Disciple-makers, simple churches, and legacy churches start at 0
-    // - % far from God calculation is handled in frontend based on 85% starting point
+    // Only return data that has been manually entered by users
+    // This ensures the data management dashboard only shows user-entered data
     
     res.json(formattedTractData);
   });
@@ -1547,8 +1513,8 @@ app.delete('/api/coordinators/clear', requireRole(['state']), (req, res) => {
 // Get disciple makers data (for map)
 app.get('/api/disciple-makers', (req, res) => {
   // This endpoint returns county-level disciple makers data
-  // For now, we'll calculate it from tract data
-  db.all('SELECT * FROM tract_data', [], (err, tractData) => {
+  // Only include data from tracts that have been manually updated by users
+  db.all('SELECT * FROM tract_data WHERE updated_by IS NOT NULL', [], (err, tractData) => {
     if (err) return res.status(500).json({ error: 'Database error' });
     
     const countyTotals = {};
@@ -1558,7 +1524,7 @@ app.get('/api/disciple-makers', (req, res) => {
       countyTotals[COUNTY_FIPS_TO_NAME[countyFips]] = 0;
     });
     
-    // Sum tract data into county totals
+    // Sum tract data into county totals (only for manually updated tracts)
     tractData.forEach(tract => {
       // Extract county FIPS from tract ID
       const tractId = tract.tract_id;

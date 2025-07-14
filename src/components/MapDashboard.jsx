@@ -153,12 +153,20 @@ function MapDashboard() {
       setCountyName(info.name);
       
       // Fetch coordinator for this county
-      if (user && user.token) {
+      const token = localStorage.getItem("token");
+      if (token) {
         const API_URL = getApiUrl();
         axios.get(`${API_URL}/api/coordinator/county/${info.countyfp}`, {
-          headers: { Authorization: `Bearer ${user.token}` }
+          headers: { Authorization: `Bearer ${token}` }
         })
-          .then(res => setCoordinator(res.data.coordinator?.name || null))
+          .then(res => {
+            // Use the name field if available, otherwise fall back to first_name + last_name
+            const coordinatorName = res.data.coordinator?.name || 
+              (res.data.coordinator?.first_name && res.data.coordinator?.last_name ? 
+                `${res.data.coordinator.first_name} ${res.data.coordinator.last_name}` : 
+                res.data.coordinator?.email || null);
+            setCoordinator(coordinatorName);
+          })
           .catch(() => setCoordinator(null));
       }
     } else {
@@ -177,12 +185,20 @@ function MapDashboard() {
     if (info) {
       setCountyName(selectedCounty?.name);
       // Fetch coordinator for this tract
-      if (user && user.token) {
+      const token = localStorage.getItem("token");
+      if (token) {
         const API_URL = getApiUrl();
         axios.get(`${API_URL}/api/coordinator/tract/${info.tractId}`, {
-          headers: { Authorization: `Bearer ${user.token}` }
+          headers: { Authorization: `Bearer ${token}` }
         })
-          .then(res => setCoordinator(res.data.coordinator?.name || null))
+          .then(res => {
+            // Use the name field if available, otherwise fall back to first_name + last_name
+            const coordinatorName = res.data.coordinator?.name || 
+              (res.data.coordinator?.first_name && res.data.coordinator?.last_name ? 
+                `${res.data.coordinator.first_name} ${res.data.coordinator.last_name}` : 
+                res.data.coordinator?.email || null);
+            setCoordinator(coordinatorName);
+          })
           .catch(() => setCoordinator(null));
       }
     } else {
@@ -298,16 +314,40 @@ function MapDashboard() {
             // Refresh coordinator data
             if (hoverInfo && hoverInfo.countyfp) {
               const API_URL = getApiUrl();
-              axios.get(`${API_URL}/api/coordinator/county/${hoverInfo.countyfp}`, {
-                headers: { Authorization: `Bearer ${user.token}` }
-              })
-                .then(res => setCoordinator(res.data.coordinator?.name || null))
-                .catch(() => setCoordinator(null));
+              const token = localStorage.getItem("token");
+              if (token) {
+                axios.get(`${API_URL}/api/coordinator/county/${hoverInfo.countyfp}`, {
+                  headers: { Authorization: `Bearer ${token}` }
+                })
+                  .then(res => {
+                    const coordinatorName = res.data.coordinator?.name || 
+                      (res.data.coordinator?.first_name && res.data.coordinator?.last_name ? 
+                        `${res.data.coordinator.first_name} ${res.data.coordinator.last_name}` : 
+                        res.data.coordinator?.email || null);
+                    setCoordinator(coordinatorName);
+                  })
+                  .catch(() => setCoordinator(null));
+              }
             }
           }}
           onCoordinatorAssigned={(coordinatorEmail) => {
             // Update the coordinator display in the hover info
-            setCoordinator(coordinatorEmail);
+            // The coordinator name should be fetched from the database
+            const token = localStorage.getItem("token");
+            if (token && hoverInfo && hoverInfo.countyfp) {
+              const API_URL = getApiUrl();
+              axios.get(`${API_URL}/api/coordinator/county/${hoverInfo.countyfp}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+                .then(res => {
+                  const coordinatorName = res.data.coordinator?.name || 
+                    (res.data.coordinator?.first_name && res.data.coordinator?.last_name ? 
+                      `${res.data.coordinator.first_name} ${res.data.coordinator.last_name}` : 
+                      res.data.coordinator?.email || null);
+                  setCoordinator(coordinatorName);
+                })
+                .catch(() => setCoordinator(null));
+            }
           }}
           onNavigateToDataManagement={() => {
             window.dispatchEvent(new CustomEvent('navigateToDataManagement'));
