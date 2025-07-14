@@ -353,6 +353,19 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState('about');
   const { user } = useAuth();
 
+  // Add event listener for navigation from child components
+  useEffect(() => {
+    const handleNavigateToPage = (event) => {
+      setCurrentPage(event.detail);
+    };
+
+    window.addEventListener('navigateToPage', handleNavigateToPage);
+
+    return () => {
+      window.removeEventListener('navigateToPage', handleNavigateToPage);
+    };
+  }, []);
+
   return (
     <div className="app-container" style={{ 
       height: "100vh", 

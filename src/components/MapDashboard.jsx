@@ -53,8 +53,8 @@ function MapDashboard() {
     
     // Add event listener for navigating to data management
     const handleNavigateToDataManagement = () => {
-      // Navigate to data management page
-      window.location.href = '/data-management';
+      // Dispatch custom event to be handled by parent App component
+      window.dispatchEvent(new CustomEvent('navigateToPage', { detail: 'database' }));
     };
     
     window.addEventListener('openCoordinatorModal', handleCoordinatorModal);
