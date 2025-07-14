@@ -56,8 +56,9 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
   let tractSum = null;
 
   // If county and tractPopulationsByCounty is provided, use sum of tracts
-  if (!isTract && tractPopulationsByCounty && tractPopulationsByCounty[id]) {
-    tractSum = tractPopulationsByCounty[id];
+  let countyPopulation = null;
+  if (!isTract && tractPopulationsByCounty && info.countyfp && tractPopulationsByCounty[info.countyfp]) {
+    countyPopulation = tractPopulationsByCounty[info.countyfp];
   }
 
   // Get the correct disciple-making metrics
@@ -65,7 +66,7 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
   let simpleChurches = info.simpleChurches || 0;
   let legacyChurches = info.legacyChurches || 0;
 
-  // For counties, use the county metrics if available
+  // For counties, use the county metrics if available (by FIPS)
   if (!isTract && countyMetrics && info.countyfp && countyMetrics[info.countyfp]) {
     const countyData = countyMetrics[info.countyfp];
     discipleMakers = countyData.discipleMakers || 0;
@@ -259,7 +260,7 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
       <ul style={{ listStyle: "none", padding: 0 }}>
         {!isTract && (
           <>
-            <li><b>Population:</b> {tractSum !== null ? tractSum.toLocaleString() : (population !== undefined && population !== null ? population.toLocaleString() : "N/A")}</li>
+            <li><b>Population:</b> {countyPopulation !== null ? countyPopulation.toLocaleString() : (population !== undefined && population !== null ? population.toLocaleString() : "N/A")}</li>
           </>
         )}
         {isTract && population !== undefined && (
