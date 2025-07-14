@@ -252,26 +252,49 @@ function HoverInfoBox({ info, setDiscipleMakers, tractPopulationsByCounty, count
         <li>
           <b>Coordinator:</b> {coordinator || "Needed"}
           {!isTract && user && user.role === "state" && (
-            <button
-              onClick={() => {
-                // Trigger coordinator assignment modal
-                window.dispatchEvent(new CustomEvent('openCoordinatorModal', {
-                  detail: { countyfp: info.countyfp, countyName: info.name }
-                }));
-              }}
-              style={{
-                marginLeft: 8,
-                padding: "4px 8px",
-                backgroundColor: "#007bff",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontSize: "12px"
-              }}
-            >
-              {coordinator ? "Change" : "Assign"}
-            </button>
+            <>
+              {!coordinator ? (
+                <button
+                  onClick={() => {
+                    // Trigger coordinator assignment modal
+                    window.dispatchEvent(new CustomEvent('openCoordinatorModal', {
+                      detail: { countyfp: info.countyfp, countyName: info.name }
+                    }));
+                  }}
+                  style={{
+                    marginLeft: 8,
+                    padding: "4px 8px",
+                    backgroundColor: "#007bff",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "12px"
+                  }}
+                >
+                  Assign
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    // Navigate to data management dashboard
+                    window.dispatchEvent(new CustomEvent('navigateToDataManagement'));
+                  }}
+                  style={{
+                    marginLeft: 8,
+                    padding: "4px 8px",
+                    backgroundColor: "#28a745",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "12px"
+                  }}
+                >
+                  Manage
+                </button>
+              )}
+            </>
           )}
         </li>
         <li>

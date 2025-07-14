@@ -3,7 +3,7 @@ import axios from "axios";
 import { useAuth } from "../App";
 import { getApiUrl } from "../utils/api";
 
-function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
+function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned, onNavigateToDataManagement }) {
   const { user } = useAuth();
   const [currentCoordinator, setCurrentCoordinator] = useState(null);
   const [coordinatorName, setCoordinatorName] = useState("");
@@ -66,14 +66,14 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
         headers: { Authorization: `Bearer ${token}` }
       });
       console.log("Assignment successful:", response.data);
-      setSuccess("Coordinator assigned and welcome email sent!");
+      setSuccess("Coordinator assigned and welcome email sent! You can now manage this coordinator in the Data Management Dashboard.");
       setCurrentCoordinator(coordinatorEmail);
       if (onCoordinatorAssigned) onCoordinatorAssigned(coordinatorEmail);
       
       // Notify other components that data has changed
       window.dispatchEvent(new Event('dataChanged'));
       
-      setTimeout(() => onClose(), 1500);
+      // Don't auto-close, let user choose to go to data management
     } catch (err) {
       console.error("Assignment failed:", err.response?.data || err.message);
       setError(err.response?.data?.error || "Failed to assign coordinator");
@@ -176,6 +176,40 @@ function CountyEditModal({ county, isOpen, onClose, onCoordinatorAssigned }) {
           {success && (
             <div style={{ color: "green", marginBottom: 16, padding: 8, background: "#e6ffe6", borderRadius: 4 }}>
               {success}
+              <div style={{ marginTop: 8 }}>
+                <button
+                  onClick={() => {
+                    onClose();
+                    if (onNavigateToDataManagement) {
+                      onNavigateToDataManagement();
+                    }
+                  }}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#007bff",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    marginRight: 8
+                  }}
+                >
+                  Go to Data Management
+                </button>
+                <button
+                  onClick={onClose}
+                  style={{
+                    padding: "8px 16px",
+                    backgroundColor: "#6c757d",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           )}
           <div style={{ display: "flex", gap: 12 }}>

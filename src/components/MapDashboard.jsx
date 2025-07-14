@@ -51,13 +51,21 @@ function MapDashboard() {
       setCountyName(null);
     };
     
+    // Add event listener for navigating to data management
+    const handleNavigateToDataManagement = () => {
+      // Navigate to data management page
+      window.location.href = '/data-management';
+    };
+    
     window.addEventListener('openCoordinatorModal', handleCoordinatorModal);
     window.addEventListener('closeHoverPanel', handleCloseHoverPanel);
+    window.addEventListener('navigateToDataManagement', handleNavigateToDataManagement);
 
     return () => {
       window.removeEventListener('dataChanged', handleDataChange);
       window.removeEventListener('openCoordinatorModal', handleCoordinatorModal);
       window.removeEventListener('closeHoverPanel', handleCloseHoverPanel);
+      window.removeEventListener('navigateToDataManagement', handleNavigateToDataManagement);
     };
   }, []);
 
@@ -300,6 +308,9 @@ function MapDashboard() {
           onCoordinatorAssigned={(coordinatorEmail) => {
             // Update the coordinator display in the hover info
             setCoordinator(coordinatorEmail);
+          }}
+          onNavigateToDataManagement={() => {
+            window.dispatchEvent(new CustomEvent('navigateToDataManagement'));
           }}
         />
       )}
